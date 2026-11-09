@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Secrets (keys live only in .env; .env.example is committed)
+.env
+
+# Data: raw files are public ABSL disclosures but large; README says where to download them.
+data/raw/
+data/other/
+data/processed/
+data/chroma/
+data/cache/
+
+# results/ IS committed (it is a deliverable)
