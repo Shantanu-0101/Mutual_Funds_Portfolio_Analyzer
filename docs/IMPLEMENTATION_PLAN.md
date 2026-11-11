@@ -16,7 +16,7 @@ The brief's working rule, applied the same way each time:
 1. Run `pytest` (all tests, not only the new ones).
 2. Run the phase's "proof" command on the real data and look at the output.
 3. Write a 3–5 line summary: what was built, what the real data showed, anything surprising.
-4. Commit on `main` with a message like `phase 1: parser + validation report`. (This is a solo repo; no branches or PRs unless you want them.)
+4. Commit on a phase branch (e.g. `phase-1-parser`) with a message like `phase 1: parser + validation report`, push, and open a pull request into `main` (changed 9 Nov 2026: one branch + PR per phase).
 5. **STOP** and wait for your OK before the next phase.
 
 If a phase turns up something the spec did not foresee (e.g. a new layout quirk), I stop and ask instead of quietly working around it.

@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| Status | v0.3, approved. Decisions D1–D11 accepted as recommended (9 Nov 2026). |
+| Status | v0.4. Decisions D1–D11 accepted (9 Nov 2026). §3 corrected from Phase 0 findings (`docs/DATA_NOTES.md` §11) and parser rules R1–R10 / questions Q1–Q4 accepted as recommended (11 Nov 2026). |
 | Date | 9 Nov 2026 |
-| Changes since v0.1 | Real data now in `data/raw/`. Spec rewritten around what the files actually contain (§3). Decisions in §13 accepted. |
+| Changes since v0.1 | Real data now in `data/raw/`. Spec rewritten around what the files actually contain (§3). Decisions in §13 accepted. v0.4: §3 facts corrected by Phase 0; FR-1.3, 1.5, 1.9 and the §6.2 table updated to the accepted parser rules. |
 | Next document | `docs/IMPLEMENTATION_PLAN.md` |
 | Purpose of this document | Fix *what* we build and *how we judge it*. The implementation plan (order of work, tasks) is built from this spec later. |
 | Audience | Me (intern), my supervisor, and whoever reads the code later |
@@ -85,24 +85,25 @@ Note the July file uses a different file-name pattern from the other three. The 
 - **Format:** legacy `.xls` (Excel 97–2003), not `.xlsx`. openpyxl cannot read it; we read it with **xlrd** (§4).
 - **Sheets:** an `Index` sheet (scheme code → scheme name), then one sheet per scheme. 104 scheme sheets in Jul/Aug/Sep, 105 in Oct. Schemes come and go: `BTMETF`, `BTMIDX`, `ABSLFSDF` appear only in Oct; `CSNHFS26`, `NSPPBS26` are missing from Oct.
 - **Title block** (same position on every sheet): row 1 = scheme code (col A) and scheme name (col C); row 2 = scheme description; row 3 = "Portfolio Statement as on September 30, 2026".
-- **Header row:** always row 4. Columns: `Name of the Instrument / Issuer | ISIN | Industry^ / Rating | Quantity | Market value (Rs. in Lakhs) | % to AUM | YTM % | YTC %`. Column B holds an internal ABSL security code (no header). 4 sheets (ESG schemes) add three columns: ESG score, BRSR Core score, link to BRSR report.
-- **Merged cells:** none in any of the 417 scheme sheets.
-- **% to AUM is a fraction**, not a percent: `0.0559673` means 5.597%. 561 cells hold the text `$0.00%` instead of a number, meaning "less than 0.01%".
-- **Section headings** are rows with text in the instrument column and no values. Two levels: a main section (`Equity & Equity Related`, `Debt Instruments`, `Money Market Instruments`, `Government Securities`, `Securitised Debt`, `Others`, `Other Current Assets / (Liabilities)`, …) and a sub-heading (`a) Listed/awaiting listing on Stock Exchanges`, `b) Unlisted`, `Certificate of Deposits`, `Commercial Paper`, `Treasury Bills`, `TREPS / Reverse Repo Investments`, `Mutual Fund Units`, `Infrastructure Investment Trust`, `Alternative Investment Funds`, `Foreign Securities and /or overseas ETF`, `Gold`, `Silver`, …). Which headings are main vs sub is settled in Phase 0.
+- **Header row:** always row 4. Columns: `Name of the Instrument / Issuer | ISIN | Industry^ / Rating | Quantity | Market value (Rs. in Lakhs) | % to AUM | YTM % | YTC %`. Column B holds an internal ABSL security code (no header). One scheme, `ABSLESG` (1 sheet per month, 4 in total), adds three columns: ESG score, BRSR Core score, link to BRSR report.
+- **Merged cells:** 1,436 ranges, all in the title/header rows or below the grand total; **none inside a portfolio block** (Phase 0; an earlier check opened the files without formatting info, where xlrd reports no merges).
+- **% to AUM is a fraction**, not a percent: `0.0559673` means 5.597%. 603 cells (571 holdings + 32 `Total` rows) hold the text `$0.00%` instead of a number, meaning "less than 0.01%". The % cell of `Net Receivable / Payable` is a balancing figure, and in July 22 `Other Current Assets` cells are plainly wrong (DATA_NOTES §7).
+- **Section headings** are rows with text in the instrument column and no values. Two levels: exactly five main headings (`Equity & Equity Related`, `Debt Instruments`, `Money Market Instruments`, `Others`, `Other Current Assets / (Liabilities)`) and sub-headings under them (`a) Listed/awaiting listing on Stock Exchanges`, `b) Unlisted`, `Government Securities`, `Securitised Debt`, `Certificate of Deposits`, `Commercial Paper`, `Treasury Bills`, `STRIPS`, `TREPS / Reverse Repo Investments`, `Mutual Fund Units`, `Infrastructure Investment Trust`, `Alternative Investment Funds`, `Foreign Securities and /or overseas ETF`, `Gold`, `Silver`, …). Full list: DATA_NOTES §4.
 - **Total rows:** a `Total` row closes each sub-block; its % is rounded to 5 decimals. Each sheet ends with `GRAND TOTAL (AUM)` (% = 1.0).
 - **Rows without an ISIN that still carry value:** `TREPS`, `Reverse Repo`, `Net Receivable / Payable`, `Margin amount for Derivative positions`. These are real parts of the portfolio and count toward 100%.
 - **Below the grand total:** footnotes (`^Industry classification…`, `$ Less than 0.01%…`), then a `Notes:` block (NAV per plan for this and last month, IDCW declared, derivative exposure tables), then a benchmark line (scheme vs benchmark index name).
 - **Size:** about 5,400–5,600 ISIN holdings per month in Jul–Sep, 7,419 in Oct. The jump comes from two new October schemes, `BTMIDX` and `BTMETF` (~1,040 rows each, broad-market index products).
-- **Ratings** seen in Oct: `CRISIL AAA`, `ICRA AAA`, `CARE AAA`, `IND AAA`, `IND AAA(SO)`, `CRISIL AAA(SO)`, `ICRA AAA(SO)` and one `[ICRA]AAA`. No `SOV` label was found in the rating column; how government securities are labelled is checked in Phase 0.
+- **Ratings** seen in Oct: `CRISIL AAA`, `ICRA AAA`, `CARE AAA`, `IND AAA`, `IND AAA(SO)`, `CRISIL AAA(SO)`, `ICRA AAA(SO)` and one `[ICRA]AAA`. Government securities, T-bills and STRIPS are labelled **`Sovereign`** (never `SOV`).
 
 ### 3.3 Inconsistencies already seen
 
 | What | Where | Effect |
 |---|---|---|
-| No `GRAND TOTAL (AUM)` row | Sep 2026, sheet `BSLIF` (Corporate Bond Fund) | Validation must not assume the grand total exists; report it. |
+| A holding named `Notes:` before the grand total | Sep 2026, sheet `BSLIF` row 207 (a STRIPS holding) | The block must end at `GRAND TOTAL (AUM)`, never at the first `Notes:` text. (v0.3 wrongly said this sheet had no grand total; every sheet has one.) |
 | Different file-name patterns | July file vs the others | Detect month from sheet content, not file name. |
-| Extra ESG columns | 4 sheets per month | Parser maps columns by header text, not by position. |
-| `$0.00%` text instead of a number | 561 cells | Needs a rule (§6.2, FR-1.3). |
+| Extra ESG columns | `ABSLESG`, 1 sheet per month | Parser maps columns by header text, not by position. |
+| `$0.00%` text instead of a number | 571 holdings + 32 Totals | Needs a rule (§6.2, FR-1.3). |
+| `Other Current Assets` % is a balancing plug, wrong in July | 36 rows over 4 months | % recomputed from value ÷ grand total (FR-1.3). |
 | Scheme list changes month to month | Oct adds 3, drops 2 | Cross-month questions must handle schemes that exist in only some months. |
 | Rating written two ways | `ICRA AAA` vs `[ICRA]AAA` | Rating normalisation needed for "rated AAA" questions (FR-5.3). |
 
@@ -231,22 +232,26 @@ IDs (FR-x.y) let the implementation plan and the tests refer back to this spec.
 | subsection | str or null *(extra)* | Sub-heading, e.g. "a) Listed/awaiting listing on Stock Exchanges". |
 | asset_class | str | `equity` / `debt` / `other`, from section by a visible mapping table in code (D6). |
 | instrument | str | Name of the instrument / issuer. |
-| isin | str or null | Null for TREPS, reverse repo, net receivables, margin. |
+| isin | str or null | Null for TREPS, reverse repo, net receivables, margin. Kept as written. |
+| isin_valid | bool *(extra)* | Check digit passes and not an `IDIA…` / `GSECREPO…` placeholder; use only valid ISINs for cross-scheme matching. |
 | industry_or_rating | str or null | |
 | quantity | float or null | |
 | market_value_lakhs | float | As in the file (already Rs. lakhs). Can be negative (net payables). |
 | pct_nav | float | **Percent units** (5.597 means 5.597%) = file value × 100. Source header is "% to AUM". |
-| pct_nav_flag | str or null *(extra)* | `lt_0.01` when the file shows `$0.00%` (FR-1.3). |
+| pct_nav_flag | str or null *(extra)* | `lt_0.01` when the file shows `$0.00%`; `recomputed` for rows under `Other Current Assets / (Liabilities)` (FR-1.3). |
+| pct_nav_file | float or null *(extra)* | The file's own % cell in percent units, kept for audit (null when it was text). |
 | ytm, ytc | float or null *(extra)* | Percent units, debt only. |
 | source_file | str | File name. |
 | source_sheet | str | Sheet name. |
 | source_row | int | The real 1-based Excel row number. |
+| asset_class_rule | str *(extra)* | How asset_class was found: `section`, `sub_only` (no main heading), `main_fallback` (new heading pair, reported). |
+| name_suspect | bool *(extra)* | Name is empty or looks like a footnote marker (e.g. `Notes:`); kept as written and reported. |
 
 - **FR-1.1** `(source_file, source_sheet, source_row)` is the **row key**. It uniquely identifies a holding and is how retrieval and gold answers are matched later.
 - **FR-1.2** Columns are found by header text, not position, so the 4 ESG sheets parse the same way (ESG columns ignored, noted in the report).
-- **FR-1.3** `$0.00%` cells: store `pct_nav = market_value_lakhs / grand_total_lakhs × 100` and set `pct_nav_flag = "lt_0.01"`. Never store null, never store 0 silently. If the grand total is missing, store 0.0 with the flag and list it in the report.
+- **FR-1.3** `$0.00%` cells: store `pct_nav = market_value_lakhs / grand_total_lakhs × 100` and set `pct_nav_flag = "lt_0.01"`. Never store null, never store 0 silently. If the grand total is missing, store 0.0 with the flag and list it in the report. Rows under `Other Current Assets / (Liabilities)` always get value ÷ grand total with `pct_nav_flag = "recomputed"`, because ABSL's cell there is a balancing figure (Q1).
 - **FR-1.4** A holding is any row inside the portfolio block with a market value, whether or not it has an ISIN (so TREPS and net receivables are holdings with `isin = null`). `Total` and `GRAND TOTAL (AUM)` rows are **not** holdings; they go to `totals.parquet` with their source row.
-- **FR-1.5** The portfolio block ends at `GRAND TOTAL (AUM)` or, if that is missing, at the first footnote (`^`, `$`) or `Notes:` line. Everything after it (footnotes, notes block, benchmark) is skipped **as a block**, recorded once per sheet with its row range.
+- **FR-1.5** The portfolio block ends at `GRAND TOTAL (AUM)` or, only if that is missing, at the first footnote (`^`, `$`) or `Notes:` line that has no market value (a holding can be named `Notes:`, see §3.3). Everything after it (footnotes, notes block, benchmark) is skipped **as a block**, recorded once per sheet with its row range.
 - **FR-1.6** No silent drops inside the portfolio block. Every non-empty row there that is not a holding, heading or total is listed in the parse report with its row and the reason.
 - **FR-1.7** Validation per scheme and month, written to `results/parse_report.md`:
   - sum of `pct_nav` vs 100, with the deviation;
@@ -256,7 +261,7 @@ IDs (FR-x.y) let the implementation plan and the tests refer back to this spec.
   - null `pct_nav` on any holding (an error);
   - sheets missing a grand total (e.g. Sep `BSLIF`).
 - **FR-1.8** The parser handles all four months. Which months go into the experiment is a config choice (D3).
-- **FR-1.9** Merged cells: none exist in the real files. The parser does not need special handling for them; a test asserts the assumption so a future file with merged cells fails loudly instead of parsing wrongly. (The brief asked to handle merged cells; this is the honest version of that.)
+- **FR-1.9** Merged cells: none exist inside a portfolio block in the real files (they do exist in title rows and below the grand total, which the parser does not read as data). A merged cell *inside* the block makes that sheet fail loudly and appear in the report, instead of parsing wrongly. (The brief asked to handle merged cells; this is the honest version of that.)
 
 ### 6.3 Phase 2: Chunkers
 
@@ -522,5 +527,5 @@ All accepted as recommended on 9 Nov 2026. D8 (exact Groq model) is settled when
 |---|---|---|
 | openpyxl for Excel | xlrd for reading | The real files are `.xls`; openpyxl only reads `.xlsx`. |
 | "% to NAV" | Column named `pct_nav`, filled from "% to AUM" | The ABSL files report % to AUM. Name kept for the brief; meaning documented. |
-| Handle merged cells, multi-row headers | Assert there are none | None exist in the real files; building handling for them would be untested code. |
+| Handle merged cells, multi-row headers | Assert there are none inside the portfolio block | None exist there in the real files; building handling for them would be untested code. |
 | Several AMCs | One AMC (ABSL), four months | That is the data we have; D1 covers adding more. |

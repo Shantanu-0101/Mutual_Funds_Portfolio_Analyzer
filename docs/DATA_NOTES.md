@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft, waiting for your review (FR-0.4). No parser code is written until you OK this. |
+| Status | Reviewed. Q1–Q4 answered as recommended (11 Nov 2026); rules R1–R10 implemented in Phase 1 (`src/parsing/`). |
 | Date | 9 Nov 2026 |
 | Evidence | `results/inspect_raw.txt`, produced by `python -m src.parsing.inspect_raw > results/inspect_raw.txt` (read-only, ~5 s). Section numbers below like "(out §9)" point into that file. |
 | Files | The 4 ABSL portfolio disclosures in `data/raw/` (Jul, Aug, Sep, Oct 2026). |
@@ -157,7 +157,7 @@ The `Industry^ / Rating` column holds an **industry for equity** rows and a **ra
 | §3.2 lists `Securitised Debt` and `Government Securities` as main sections | They are sub-headings under `Debt Instruments`; there are 5 main headings (§4) |
 | — (new) | Net Receivable % is a balancing figure; July % cells are wrong for Net Receivable / Margin rows (§7) |
 
-I haven't edited SPEC.md yet; I'll update §3 once you OK these.
+Applied to SPEC.md §3 in v0.4 (Phase 1).
 
 ## 12. Proposed parser rules for Phase 1
 
@@ -180,3 +180,7 @@ I haven't edited SPEC.md yet; I'll update §3 once you OK these.
 - **Q2. TREPS / Reverse Repo asset class.** `debt` (the D6 guess: it's short-term lending against government securities), or `other` (closer to "cash")? I recommend `debt`, as D6 said.
 - **Q3. `Notes:` name (R7).** Keep the raw name and flag it (recommended), or fill the real name `0% GOI - (15/04/2038) STRIPS` from the other months? Note it's in **September**, the evaluation month, so it will show up in chunks.
 - **Q4. Spec update.** OK to apply the §11 corrections to SPEC.md §3 in the Phase 1 branch?
+
+**Answers (11 Nov 2026), all as recommended:** Q1 compute from value ÷ grand total (flag `recomputed`); Q2 TREPS / Reverse Repo → `debt`; Q3 keep the raw name and flag it (`name_suspect`); Q4 SPEC.md §3 corrected in the Phase 1 branch.
+
+**Found while building Phase 1:** `ABSLESG` row 61 in Sep and Oct has a number only in the ESG score column, under the equity `Total` (a weighted ESG score). It is not a holding; the parser ignores rows whose only filled cells are unmapped columns and lists them in `results/parse_report.md` §7.
