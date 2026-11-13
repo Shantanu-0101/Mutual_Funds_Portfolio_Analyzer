@@ -23,6 +23,8 @@ IST = timezone(timedelta(hours=5, minutes=30))
 
 def describe(r: RagResult) -> list[str]:
     lines = [f"## {r.chunker}", "", f"- status: **{r.status}**" + (f" ({r.error})" if r.error else "")]
+    if r.fallback_reason:
+        lines.append(f"- answered by fallback {r.provider} / {r.model} because {r.fallback_reason}")
     if r.answer:
         a = r.answer
         lines.append(f"- answer: {a['answer']}")
@@ -63,7 +65,7 @@ def main(argv: list[str] | None = None) -> int:
            f"| Generated | {datetime.now(IST):%d %b %Y %H:%M} IST by `python -m src.rag` |",
            f"| Question | {args.question} |",
            f"| LLM | {s.llm.provider} / {pipe.llm.model}, temperature {s.llm.temperature}, "
-           f"reasoning {s.llm.reasoning_effort} |",
+           f"reasoning {s.llm.reasoning_effort}, fallback {pipe.llm.fallback_name or 'none'} |",
            f"| Retrieval | top_k {s.retrieval.top_k}, filter: "
            f"{', '.join(x for x in (args.scheme, args.month) if x) or 'none'} |", ""]
     for name in names:

@@ -9,8 +9,10 @@ Loading is strict: a missing or unknown key in config.yaml is an error, not a
 silent default, so a typo cannot quietly change an experiment.
 
 Environment (``.env`` or real environment variables; real ones win):
-  LLM_PROVIDER    overrides ``llm.provider`` (groq | gemini | mock)
-  GROQ_API_KEY    secret, never written to repr, logs or the manifest
+  LLM_PROVIDER    overrides ``llm.provider`` (xai | groq | gemini | mock)
+  LLM_FALLBACK    overrides ``llm.fallback`` (a provider name, or ``none`` to switch it off)
+  XAI_API_KEY     secret, never written to repr, logs or the manifest
+  GROQ_API_KEY    secret, same
   GEMINI_API_KEY  secret, same
 """
 
@@ -29,7 +31,8 @@ from dotenv import dotenv_values
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = PROJECT_ROOT / "config.yaml"
 DEFAULT_ENV_FILE = PROJECT_ROOT / ".env"
-LLM_PROVIDERS = ("groq", "gemini", "mock")
+LLM_PROVIDERS = ("xai", "groq", "gemini", "mock")
+ENV_KEYS = ("LLM_PROVIDER", "LLM_FALLBACK", "XAI_API_KEY", "GROQ_API_KEY", "GEMINI_API_KEY")
 
 
 class ConfigError(ValueError):
@@ -66,6 +69,7 @@ class RetrievalSettings:
 @dataclass(frozen=True)
 class LLMSettings:
     provider: str
+    fallback: str | None            # provider to try when ``provider`` is rate-limited or unavailable; null = none
     models: dict[str, str | None]   # model name per provider
     reasoning_effort: str | None    # for reasoning models (gpt-oss): low | medium | high; null = provider default
     temperature: float
@@ -94,6 +98,7 @@ class EvalSettings:
 
 @dataclass(frozen=True)
 class Secrets:
+    xai_api_key: str | None = field(default=None, repr=False)
     groq_api_key: str | None = field(default=None, repr=False)
     gemini_api_key: str | None = field(default=None, repr=False)
 
@@ -179,7 +184,7 @@ def load_settings(
 
     env: dict[str, str] = {k: v for k, v in dotenv_values(env_file).items() if v is not None} \
         if env_file.is_file() else {}
-    env.update({k: v for k, v in environ.items() if k in ("LLM_PROVIDER", "GROQ_API_KEY", "GEMINI_API_KEY")})
+    env.update({k: v for k, v in environ.items() if k in ENV_KEYS})
 
     base = config_path.resolve().parent
     paths_raw = _section(raw, "paths")
@@ -200,9 +205,15 @@ def load_settings(
     llm_raw = dict(_section(raw, "llm"))
     if env.get("LLM_PROVIDER"):
         llm_raw["provider"] = env["LLM_PROVIDER"].strip().lower()
+    if "LLM_FALLBACK" in env:
+        llm_raw["fallback"] = env["LLM_FALLBACK"].strip().lower()
+    if str(llm_raw.get("fallback", "")).lower() in ("", "none", "null", "off"):
+        llm_raw["fallback"] = None
     llm = _build(LLMSettings, llm_raw, "llm")
     if llm.provider not in LLM_PROVIDERS:
         raise ConfigError(f"llm.provider must be one of {LLM_PROVIDERS}, got {llm.provider!r}")
+    if llm.fallback is not None and (llm.fallback not in LLM_PROVIDERS or llm.fallback == llm.provider):
+        raise ConfigError(f"llm.fallback must be null or another of {LLM_PROVIDERS}, got {llm.fallback!r}")
     if not isinstance(llm.models, dict) or set(llm.models) != set(LLM_PROVIDERS):
         raise ConfigError(f"llm.models must name a model for each of {LLM_PROVIDERS} (null if unused)")
     if llm.reasoning_effort not in (None, "low", "medium", "high"):
@@ -221,6 +232,7 @@ def load_settings(
         eval=_build(EvalSettings, _section(raw, "eval"), "eval"),
         config_file=config_path.resolve(),
         secrets=Secrets(
+            xai_api_key=env.get("XAI_API_KEY") or None,
             groq_api_key=env.get("GROQ_API_KEY") or None,
             gemini_api_key=env.get("GEMINI_API_KEY") or None,
         ),

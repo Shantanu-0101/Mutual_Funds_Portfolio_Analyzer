@@ -11,6 +11,7 @@ prompt / completion tokens, and retrieval and generation latency.
 - ``format_error``     the model replied, but not in the format (counts as wrong; not repaired)
 - ``context_overflow`` the provider refused the request as too large (D9)
 - ``rate_limited``     limits not cleared after retrying (the run can be resumed later)
+- ``provider_unavailable`` bad key, no credit, or the provider stayed down (and no fallback helped)
 - ``llm_error``        any other provider failure
 """
 
@@ -26,7 +27,7 @@ from src.parsing.pipeline import HOLDINGS_FILE
 from src.rag.prompt import AnswerFormatError, build_messages, norm_name, parse_answer
 from src.rag.retrieve import Retrieval, Retriever
 
-STATUSES = ("ok", "format_error", "context_overflow", "rate_limited", "llm_error")
+STATUSES = ("ok", "format_error", "context_overflow", "rate_limited", "provider_unavailable", "llm_error")
 
 
 @dataclass
@@ -45,7 +46,9 @@ class RagResult:
     reasoning_tokens: int | None = None
     generation_ms: float = 0.0
     cached: bool = False
-    model: str | None = None
+    model: str | None = None              # the model that answered (the fallback's, if it was used)
+    provider: str | None = None
+    fallback_reason: str | None = None    # set when the fallback provider answered
 
     @property
     def retrieval_ms(self) -> float:
@@ -99,11 +102,13 @@ class RagPipeline:
                scheme_code: str | None = None, as_of_date: str | None = None) -> RagResult:
         retrieval = self.retriever.retrieve(question, chunker, top_k, scheme_code, as_of_date)
         messages = build_messages(question, [r.chunk for r in retrieval.chunks])
-        base = dict(question=question, chunker=chunker, retrieval=retrieval, model=self.llm.model)
+        base = dict(question=question, chunker=chunker, retrieval=retrieval, model=self.llm.model,
+                    provider=self.llm.provider.name)
         try:
             res: LLMResult = self.llm.generate(messages, json=True)
         except LLMError as e:
             return RagResult(status=e.kind, answer=None, error=str(e), raw_text=None, **base)
+        base.update(model=res.model, provider=res.provider, fallback_reason=res.fallback_reason)
         usage = dict(prompt_tokens=res.prompt_tokens, completion_tokens=res.completion_tokens,
                      reasoning_tokens=res.reasoning_tokens, generation_ms=res.latency_ms, cached=res.cached)
         try:
