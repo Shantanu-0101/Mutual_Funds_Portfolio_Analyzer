@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Generated | 11 Nov 2026 15:49 IST by `python -m src.chunking --month 2026-09-30` |
+| Generated | 13 Nov 2026 08:06 IST by `python -m src.chunking --month 2026-09-30` |
 | Month | 2026-09-30 |
 | Schemes | 104 |
 | Holdings | 5,646 |
@@ -20,7 +20,7 @@
 | section_aware | max_tokens=512 | 707 | 341.7 | 476 | 512 | 0 (0.0%) | 241,548 | 8.0 | 5,646 | 0 |
 | hierarchical | child=row, parent=section | 5,646 | 105.6 | 103 | 141 | 0 (0.0%) | 596,048 | 1.0 | 5,646 | 0 |
 
-`hierarchical` parents (sent to the LLM, never embedded): 707 parents, avg 341.7 tokens, max 512, 8.0 rows each, 5,646 holdings covered.
+`hierarchical` parents (sent to the LLM, never embedded): 333 parents, avg 647.9 tokens, max 7,612, 17.0 rows each, 5,646 holdings covered.
 
 Truncation only affects the embedding (retrieval). The full chunk text is stored and sent to the LLM.
 

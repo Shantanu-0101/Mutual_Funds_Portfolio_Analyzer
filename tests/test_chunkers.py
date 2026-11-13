@@ -204,11 +204,14 @@ def test_section_aware_splits_long_sections_without_mixing(sheet):
 
 
 def test_hierarchical(sheet):
-    h = HierarchicalChunker(TOK, parent_max_tokens=150, child="row", parent="section").build(sheet)
+    h = HierarchicalChunker(TOK, child="row", parent="section").build(sheet)
     rows_ = RowWiseChunker(TOK).chunk(sheet)
-    sections_ = SectionAwareChunker(TOK, max_tokens=150).chunk(sheet)
     assert [c.text for c in h.chunks] == [c.text for c in rows_]          # same text -> shared embedding cache
-    assert [p.text for p in h.parents] == [c.text for c in sections_]
+    # parents are whole sections, never split, even where section_aware would split
+    assert [p.section for p in h.parents] == [EQ, DEBT, MM, OCA]
+    assert [len(p.source_rows) for p in h.parents] == [12, 3, 1, 2]
+    assert len([c for c in SectionAwareChunker(TOK, max_tokens=150).chunk(sheet) if c.section == EQ]) > 1
+    assert h.parents[0].n_tokens > 150
     assert all(p.id.split(":")[-1].startswith("p") for p in h.parents)
     parents = {p.id: p for p in h.parents}
     assert len(parents) == len(h.parents)
@@ -279,8 +282,7 @@ def test_bad_options(cls, opts, msg):
 def test_build_chunker_uses_config(settings):
     fs = build_chunker("fixed_size", settings, TOK)
     assert fs.options == {"chunk_tokens": 256, "overlap_tokens": 32} and fs.embed_max_tokens == 512
-    h = build_chunker("hierarchical", settings, TOK)
-    assert h._parents.options["max_tokens"] == settings.chunking["section_aware"]["max_tokens"]
+    assert build_chunker("hierarchical", settings, TOK).options == {"child": "row", "parent": "section"}
     with pytest.raises(ChunkingError, match="unknown chunker"):
         build_chunker("nope", settings, TOK)
 

@@ -66,11 +66,17 @@ class RetrievalSettings:
 @dataclass(frozen=True)
 class LLMSettings:
     provider: str
-    model: str | None
+    models: dict[str, str | None]   # model name per provider
+    reasoning_effort: str | None    # for reasoning models (gpt-oss): low | medium | high; null = provider default
     temperature: float
     max_output_tokens: int
     timeout_s: int
     retries: int
+
+    @property
+    def model(self) -> str | None:
+        """The model for the active provider."""
+        return self.models.get(self.provider)
 
 
 @dataclass(frozen=True)
@@ -197,6 +203,10 @@ def load_settings(
     llm = _build(LLMSettings, llm_raw, "llm")
     if llm.provider not in LLM_PROVIDERS:
         raise ConfigError(f"llm.provider must be one of {LLM_PROVIDERS}, got {llm.provider!r}")
+    if not isinstance(llm.models, dict) or set(llm.models) != set(LLM_PROVIDERS):
+        raise ConfigError(f"llm.models must name a model for each of {LLM_PROVIDERS} (null if unused)")
+    if llm.reasoning_effort not in (None, "low", "medium", "high"):
+        raise ConfigError(f"llm.reasoning_effort must be low, medium, high or null, got {llm.reasoning_effort!r}")
 
     chunking = _section(raw, "chunking")
 

@@ -24,6 +24,14 @@ from src.chunking.base import (
 )
 
 
+def group_by_section(rows: list) -> dict[str, list]:
+    """Rows per section, sections in order of first appearance, rows in file order."""
+    out: dict[str, list] = {}
+    for row in rows:
+        out.setdefault(_clean(row.section), []).append(row)
+    return out
+
+
 class SectionAwareChunker(Chunker):
     name = "section_aware"
     OPTIONS = {"max_tokens": int}
@@ -48,11 +56,8 @@ class SectionAwareChunker(Chunker):
 
     def build(self, sheet: pd.DataFrame) -> ChunkSet:
         info, rows = prepare_sheet(sheet)
-        by_section: dict[str, list] = {}
-        for row in rows:
-            by_section.setdefault(_clean(row.section), []).append(row)
         chunks = []
-        for section, section_rows in by_section.items():
+        for section, section_rows in group_by_section(rows).items():
             for part in self._split(section_rows, info, section):
                 table = format_table(part, info, section)
                 chunks.append(self.make_chunk(self.chunk_id(info, len(chunks)), table.text, info, section,

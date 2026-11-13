@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| Status | v0.4. Decisions D1–D11 accepted (9 Nov 2026). §3 corrected from Phase 0 findings (`docs/DATA_NOTES.md` §11) and parser rules R1–R10 / questions Q1–Q4 accepted as recommended (11 Nov 2026). |
+| Status | v0.5. Decisions D1–D11 accepted (9 Nov 2026). §3 corrected from Phase 0 findings (`docs/DATA_NOTES.md` §11) and parser rules R1–R10 / questions Q1–Q4 accepted as recommended (11 Nov 2026). |
 | Date | 9 Nov 2026 |
-| Changes since v0.1 | Real data now in `data/raw/`. Spec rewritten around what the files actually contain (§3). Decisions in §13 accepted. v0.4: §3 facts corrected by Phase 0; FR-1.3, 1.5, 1.9 and the §6.2 table updated to the accepted parser rules. |
+| Changes since v0.1 | Real data now in `data/raw/`. Spec rewritten around what the files actually contain (§3). Decisions in §13 accepted. v0.4: §3 facts corrected by Phase 0; FR-1.3, 1.5, 1.9 and the §6.2 table updated to the accepted parser rules. v0.5 (13 Nov 2026): hierarchical parents are whole sections (§6.3); `sources` carry no row number, rows are resolved in code (FR-3.6); D8 settled. |
 | Next document | `docs/IMPLEMENTATION_PLAN.md` |
 | Purpose of this document | Fix *what* we build and *how we judge it*. The implementation plan (order of work, tasks) is built from this spec later. |
 | Audience | Me (intern), my supervisor, and whoever reads the code later |
@@ -289,7 +289,7 @@ Chunk:
 | 3 | header_window | N rows per chunk, with column header + scheme + date + section repeated in each chunk. | Middle ground: some neighbours, still small. |
 | 4 | scheme_level | Whole scheme in one chunk. Over 512 tokens (true for most schemes: the 85-holding Flexi Cap sheet is ~2,500 tokens) → embedding truncated, recorded. | Full context for aggregation, but the embedding only sees the top ~10 holdings, so retrieval should be weak. |
 | 5 | section_aware | One chunk per section per scheme; split only if above max tokens. | Matches how humans read the sheet; good for "total debt" style questions. |
-| 6 | hierarchical | Embed row-level children; when a child is retrieved, send its parent section chunk to the LLM. Parents deduplicated. | Precise retrieval + wide context. Costs more tokens. |
+| 6 | hierarchical | Embed row-level children; when a child is retrieved, send its parent section to the LLM. Parents are **whole sections, never split** (they are not embedded, so the 512-token limit does not apply; decided 11 Nov 2026 after Phase 2). Parents deduplicated. | Precise retrieval + wide context. Costs more tokens. |
 | opt | llm_summary | LLM writes a summary per section; the summary is embedded; the exact table is attached for the LLM. | Only if time allows (D10). |
 
 **Table text format** for multi-row chunks: `Scheme:`, `As on:`, `Section:` lines, one header line, then one pipe-separated line per row (`Instrument | ISIN | Industry/Rating | Qty | Value (Rs L) | % to AUM`). Same format for chunkers 3, 4, 5 and the parents of 6, so they differ only in *how much* goes into a chunk. Percent values are written in percent units (5.60), not fractions, so the LLM does not have to convert.
@@ -306,10 +306,11 @@ Chunk:
   {"answer": "plain-English answer",
    "value": 5.6, "unit": "pct | lakhs | count | null",
    "items": ["for list answers"],
-   "sources": [{"scheme": "...", "instrument": "...", "row": 8}],
+   "sources": [{"scheme": "...", "instrument": "..."}],
    "insufficient_context": false}
   ```
   Malformed JSON is recorded as a format failure (counts as wrong), not repaired silently.
+  `sources` has no row number: the chunk text shows no Excel rows, so the model could only guess them. The pipeline matches each cited (scheme, instrument) to the context rows instead, which gives exact row keys.
 - **FR-3.7** Each call returns: answer object, retrieved chunks (ids, text, scores), context rows, prompt and completion tokens, retrieval latency, generation latency.
 
 ### 6.5 Phase 4: No-chunking baseline (text-to-pandas)
@@ -500,7 +501,7 @@ All accepted as recommended on 9 Nov 2026. D8 (exact Groq model) is settled when
 | D5 | Numeric tolerance for small values | Relative 1% **or** 0.01 percentage points, whichever is larger, because the sheets' totals round to 0.001%. |
 | D6 | Section → asset_class mapping for mixed items (InvITs, REITs, AIFs, mutual fund units, gold, silver, TREPS, net receivables) | Decide in Phase 0 after listing all headings; mapping kept as a visible table in code. My starting guess: InvIT/REIT/AIF/MF units/gold/silver → `other`; TREPS, reverse repo, CDs, CPs, T-bills → `debt` (money market); net receivables and margin → `other`. |
 | D7 | Python version: the brief says 3.11, this laptop has only 3.13.7 | Install 3.11 and use a virtualenv, to match the brief and avoid library surprises. Alternative: use 3.13 and note it. |
-| D8 | Groq model name | A current Llama-class model on Groq with a large context window; I check the live model list and rate limits when building `llm.py` and put the choice in config. |
+| D8 | Groq model name | **`openai/gpt-oss-120b`, reasoning effort low** (13 Nov 2026). Groq's live list had no Llama chat model left; the chat models were gpt-oss-120b, gpt-oss-20b and qwen3.8-27b, all 131k context and, on this account's free tier, 8,000 tokens/minute and 1,000 requests/day. gpt-oss-120b is the strongest of the three at arithmetic over many rows. A single request above 8,000 tokens is refused (HTTP 413) and recorded as context overflow (D9). |
 | D9 | Cap on context tokens for big-chunk methods? | No cap (same top_k for all, as the brief says). If a request exceeds the LLM's limit, record it as a "context overflow" failure. |
 | D10 | Build the optional `llm_summary` chunker? | Only after Phase 5 works for the six required ones. |
 | D11 | Initialise git in this folder now? Commit the raw files? | Yes to git, with `.gitignore` for `.env`, `data/chroma`, `data/cache`. The ABSL files are public disclosures but large (4–8 MB each): git-ignore `data/raw/` and document where to download them. |
