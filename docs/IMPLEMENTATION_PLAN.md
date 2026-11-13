@@ -217,6 +217,8 @@ Blocked: `import os`, `open(...)`, `__class__` tricks, `df.to_csv(...)`, `pd.rea
 
 Metrics: tolerance edges (just inside / just outside 1%), the 0.01-point floor for small values, zero gold, list matching and Jaccard, refusal detection, false refusals, recall. Gold: each function on the synthetic DataFrame with a hand-computed answer; rating normaliser (`[ICRA]AAA` = `ICRA AAA`).
 
+*Built 13 Nov 2026 (5a):* `python -m src.eval gold` writes `results/gold_answers.md` (all 28); `python -m src.eval manual-check` writes `results/manual_check.md`. The manual sample is drawn from the 24 answerable questions (nothing to check on unanswerable ones). Gold sums were cross-checked against the file's own Total rows (Q12–Q14, Q16).
+
 **Commit:** `phase 5a: gold, questions, metrics` (after stop A) and `phase 5b: full evaluation run` (after stop B, with `results/` committed).
 
 ---
