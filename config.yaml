@@ -23,15 +23,20 @@ retrieval:
   top_k: 5
 
 llm:
-  provider: groq             # overridden by env LLM_PROVIDER (groq | gemini | mock)
+  # Plan (13 Nov 2026): xAI (paid) answers, Groq (free tier) is the fallback when xAI is rate-limited,
+  # out of credit or down. Stays on groq until the xAI model is picked from the live list (D8b);
+  # then: provider: xai, fallback: groq.
+  provider: groq             # overridden by env LLM_PROVIDER (xai | groq | gemini | mock)
+  fallback: null             # overridden by env LLM_FALLBACK; null or "none" = no fallback
   # Model per provider (D8, decided 13 Nov 2026). Groq's live list had no Llama chat model left;
   # gpt-oss-120b is the strongest of the three chat models there (gpt-oss-20b, qwen3.8-27b).
   # Free tier on this account: 8,000 tokens/minute, 1,000 requests/day for all three.
   models:
+    xai: null                # set from `python -m src.llm models xai` (D8b) before switching to xai
     groq: openai/gpt-oss-120b
     gemini: null             # set (from the live model list) before switching to gemini
     mock: mock
-  reasoning_effort: low      # gpt-oss thinks before answering; hidden reasoning counts as output tokens
+  reasoning_effort: low      # groq gpt-oss only (xAI's reasoning models reject it); gpt-oss thinks before answering; hidden reasoning counts as output tokens
   temperature: 0
   max_output_tokens: 800
   timeout_s: 60

@@ -172,7 +172,7 @@ On a synthetic DataFrame: every holding row appears in at least one chunk's `sou
 
 ### Design
 
-The runner is a **separate Python process** (`python -I -m src.baseline.sandbox`), so a timeout can kill it cleanly on Windows. The parent process sends the generated code over stdin; the child loads the DataFrame itself *before* running the code, then runs it with only `df`, `pd` and a short list of safe builtins in scope. An AST check runs first and blocks imports, `open/exec/eval/compile/__import__`, dunder access and pandas I/O. DESIGN.md will state what this does **not** protect against (§9.3).
+The runner is a **separate Python process** (`python -I src/baseline/sandbox.py`), so a timeout can kill it cleanly on Windows. *(Built 13 Nov 2026: run as a script, not `-m`, because `-I` keeps the project folder off `sys.path`; the file therefore imports only the standard library and pandas. The child loads the data, says READY, and only then does the timeout clock start. It runs in an empty temp folder with API keys stripped from its environment.)* The parent process sends the generated code over stdin; the child loads the DataFrame itself *before* running the code, then runs it with only `df`, `pd` and a short list of safe builtins in scope. An AST check runs first and blocks imports, `open/exec/eval/compile/__import__`, dunder access and pandas I/O. DESIGN.md will state what this does **not** protect against (§9.3).
 
 ### Tasks
 
@@ -203,7 +203,7 @@ Blocked: `import os`, `open(...)`, `__class__` tricks, `df.to_csv(...)`, `pd.rea
 | 5.2 | Write the 28 questions from real September names (7 lookup, 7 aggregation, 5 debt, 5 cross_scheme, 4 unanswerable). **I show you the list before running anything on it.** | `src/eval/questions.yaml` | FR-5.1 |
 | 5.3 | Manual check export: 10 random questions (seed 42) with gold answers and raw cell references | `src/eval/manual_check.py` → `results/manual_check.md` | FR-5.4 |
 | 5.4 | Metrics exactly as spec §6.6 | `src/eval/metrics.py` | §6.6 |
-| 5.5 | Runner: every method × every question, same settings; resumable (skips rows already in `results.csv`); writes `run_manifest.json` | `src/eval/runner.py` | FR-5.5, 5.6 |
+| 5.5 | Runner: every method × every question, same settings; resumable (skips rows already in `results.csv`); writes `run_manifest.json`. Records `provider`/`model` per row; a row answered by the fallback provider (`fallback_reason` set) is a different model, so it is flagged and re-run before the report (or the run uses `LLM_FALLBACK=none`) | `src/eval/runner.py` | FR-5.5, 5.6 |
 | 5.6 | Report: accuracy by method × question type, retrieval table next to context tokens, tokens and latency table, 3 failure examples per method labelled retrieval miss / generation error / format error, bar chart | `src/eval/report.py` | §6.6 outputs |
 
 ### Order inside the phase (two stops)
@@ -286,7 +286,7 @@ Definition of done, checked at the end of Phase 7:
 |---|---|---|
 | Python 3.11 not installed yet | Setup | You install it; everything else waits. |
 | A layout quirk not seen so far | Phase 1 | Stop and ask; add a synthetic fixture for it. |
-| Groq free-tier limits too low for scheme_level contexts | Phase 3 / 5 | Record as "context overflow" (D9); tell you the numbers; you decide whether to switch to Gemini or a paid tier. |
+| Groq free-tier limits too low for scheme_level contexts | Phase 3 / 5 | Record as "context overflow" (D9); tell you the numbers; you decide whether to switch to Gemini or a paid tier. **Update 13 Nov 2026:** xAI (paid) becomes the main provider, Groq the fallback (D8b). |
 | Gold answers wrong because of a parser bug | Phase 5 | Stop A: your manual check happens before any LLM run. |
 | OneDrive locks Chroma/cache files | Phase 3 | Move those paths outside OneDrive via config. |
 | First model download (~130 MB for bge-small) | Phase 3 | One-time; cached by sentence-transformers. |
