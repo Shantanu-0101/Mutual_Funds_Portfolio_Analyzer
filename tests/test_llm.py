@@ -169,5 +169,5 @@ def test_gemini_needs_model_and_key(tmp_path):
 
 
 def test_error_text_scrubbed():
-    err = classify_http_error(413, "Request too large in organization `org_01kr10abcXYZ` on TPM")
-    assert "org_01kr" not in str(err) and "org_<redacted>" in str(err)
+    err = classify_http_error(413, "Request too large in organization `org_FAKE0TEST1` on TPM")
+    assert "org_FAKE0" not in str(err) and "org_<redacted>" in str(err)
