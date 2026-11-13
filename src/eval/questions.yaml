@@ -1,0 +1,230 @@
+# Evaluation questions (task 5.2, FR-5.1). Written 13 Nov 2026 from real names in the
+# 30 Sep 2026 ABSL disclosure. Gold answers come from src/eval/gold.py, never from an LLM.
+#
+# answer_kind: number | list | choice | not_in_data
+# unit (number only): pct | lakhs | count
+# options (choice only): scheme code -> names that count as picking that scheme
+# Rules the gold code uses are written into the question text (FR-5.3), e.g. what "AAA" covers.
+
+# ---------------------------------------------------------------- lookup (7)
+- id: Q01
+  type: lookup
+  text: "What % of AUM does Aditya Birla Sun Life Flexi Cap Fund hold in ICICI Bank Ltd. as on 30 Sep 2026?"
+  answer_kind: number
+  unit: pct
+  gold_fn: holding_pct
+  params: {scheme_code: BSLEQTY, as_of_date: "2026-09-30", isin: INE090A01021}
+
+- id: Q02
+  type: lookup
+  text: "What % of AUM does Aditya Birla Sun Life Large Cap Fund hold in Infosys Ltd. as on 30 Sep 2026?"
+  answer_kind: number
+  unit: pct
+  gold_fn: holding_pct
+  params: {scheme_code: BSLFEF, as_of_date: "2026-09-30", isin: INE009A01021}
+
+- id: Q03
+  type: lookup
+  text: "What % of AUM does Aditya Birla Sun Life Small Cap Fund hold in TD Power Systems Ltd. as on 30 Sep 2026?"
+  answer_kind: number
+  unit: pct
+  gold_fn: holding_pct
+  params: {scheme_code: BSLTA1, as_of_date: "2026-09-30", isin: INE419M01035}
+
+- id: Q04
+  type: lookup
+  text: "What is the market value, in Rs lakhs, of The Federal Bank Ltd. held by Aditya Birla Sun Life Midcap Fund as on 30 Sep 2026?"
+  answer_kind: number
+  unit: lakhs
+  gold_fn: holding_value
+  params: {scheme_code: MIDCAP, as_of_date: "2026-09-30", isin: INE171A01029}
+
+- id: Q05
+  type: lookup
+  text: "What % of AUM does Aditya Birla Sun Life Digital India Fund hold in Tech Mahindra Ltd. as on 30 Sep 2026?"
+  answer_kind: number
+  unit: pct
+  gold_fn: holding_pct
+  params: {scheme_code: BSLNMF, as_of_date: "2026-09-30", isin: INE669C01036}
+
+- id: Q06
+  type: lookup
+  text: "What is the market value, in Rs lakhs, of Swiggy Ltd. held by Aditya Birla Sun Life Value Fund as on 30 Sep 2026?"
+  answer_kind: number
+  unit: lakhs
+  gold_fn: holding_value
+  params: {scheme_code: PURE, as_of_date: "2026-09-30", isin: INE00H001014}
+
+- id: Q07
+  type: lookup
+  text: "What % of AUM does Aditya Birla Sun Life Medium to Long Term Fund hold in the 7.17% Tata Capital Housing Finance Ltd. bond maturing 21/05/2030, as on 30 Sep 2026?"
+  answer_kind: number
+  unit: pct
+  gold_fn: holding_pct
+  params: {scheme_code: PLUS, as_of_date: "2026-09-30", isin: INE033L07IP8}
+
+# ---------------------------------------------------------------- aggregation (7)
+- id: Q08
+  type: aggregation
+  text: "What is the total % of AUM in equity holdings of the Banks industry for Aditya Birla Sun Life Flexi Cap Fund as on 30 Sep 2026?"
+  answer_kind: number
+  unit: pct
+  gold_fn: industry_total
+  params: {scheme_code: BSLEQTY, as_of_date: "2026-09-30", industry: Banks}
+
+- id: Q09
+  type: aggregation
+  text: "What is the total % of AUM in equity holdings of the IT - Software industry for Aditya Birla Sun Life Digital India Fund as on 30 Sep 2026?"
+  answer_kind: number
+  unit: pct
+  gold_fn: industry_total
+  params: {scheme_code: BSLNMF, as_of_date: "2026-09-30", industry: "IT - Software"}
+
+- id: Q10
+  type: aggregation
+  text: "What share of AUM do the top 5 equity holdings (by % of AUM) of Aditya Birla Sun Life Large Cap Fund make up together, as on 30 Sep 2026?"
+  answer_kind: number
+  unit: pct
+  gold_fn: top_n_share
+  params: {scheme_code: BSLFEF, as_of_date: "2026-09-30", n: 5}
+
+- id: Q11
+  type: aggregation
+  text: "What share of AUM do the top 3 equity holdings (by % of AUM) of Aditya Birla Sun Life Midcap Fund make up together, as on 30 Sep 2026?"
+  answer_kind: number
+  unit: pct
+  gold_fn: top_n_share
+  params: {scheme_code: MIDCAP, as_of_date: "2026-09-30", n: 3}
+
+- id: Q12
+  type: aggregation
+  text: "How many holdings are listed in the Equity & Equity Related section of Aditya Birla Sun Life Large Cap Fund as on 30 Sep 2026?"
+  answer_kind: number
+  unit: count
+  gold_fn: holding_count
+  params: {scheme_code: BSLFEF, as_of_date: "2026-09-30"}
+
+- id: Q13
+  type: aggregation
+  text: "How many holdings are listed in the Equity & Equity Related section of Aditya Birla Sun Life Focused Fund as on 30 Sep 2026?"
+  answer_kind: number
+  unit: count
+  gold_fn: holding_count
+  params: {scheme_code: BTOP100, as_of_date: "2026-09-30"}
+
+- id: Q14
+  type: aggregation
+  text: "What is the total % of AUM in the Equity & Equity Related section of Aditya Birla Sun Life Aggressive Hybrid Fund as on 30 Sep 2026?"
+  answer_kind: number
+  unit: pct
+  gold_fn: section_total
+  params: {scheme_code: BSL95F, as_of_date: "2026-09-30", section: "Equity & Equity Related"}
+
+# ---------------------------------------------------------------- debt (5)
+- id: Q15
+  type: debt
+  text: "What % of AUM of Aditya Birla Sun Life Medium to Long Term Fund is rated AAA by any agency (CRISIL, ICRA, CARE or IND; not counting securitised AAA(SO) ratings) as on 30 Sep 2026?"
+  answer_kind: number
+  unit: pct
+  gold_fn: rating_share
+  params: {scheme_code: PLUS, as_of_date: "2026-09-30", rating: AAA}
+
+- id: Q16
+  type: debt
+  text: "What is the total % of AUM in Government Securities (the Government Securities sub-section of Debt Instruments) for Aditya Birla Sun Life Medium to Long Term Fund as on 30 Sep 2026?"
+  answer_kind: number
+  unit: pct
+  gold_fn: section_total
+  params: {scheme_code: PLUS, as_of_date: "2026-09-30", section: "Debt Instruments", subsection: "Government Securities"}
+
+- id: Q17
+  type: debt
+  text: "List all holdings of Aditya Birla Sun Life Short Term Fund rated CARE AAA as on 30 Sep 2026."
+  answer_kind: list
+  gold_fn: instruments_by_rating
+  params: {scheme_code: BBIF, as_of_date: "2026-09-30", rating: "CARE AAA"}
+
+- id: Q18
+  type: debt
+  text: "List all holdings of Aditya Birla Sun Life Credit Risk Fund rated IND AA- as on 30 Sep 2026."
+  answer_kind: list
+  gold_fn: instruments_by_rating
+  params: {scheme_code: BSLCBF, as_of_date: "2026-09-30", rating: "IND AA-"}
+
+- id: Q19
+  type: debt
+  text: "What % of AUM of Aditya Birla Sun Life Medium Term Fund is rated AA- by any agency (CRISIL, ICRA, CARE or IND) as on 30 Sep 2026?"
+  answer_kind: number
+  unit: pct
+  gold_fn: rating_share
+  params: {scheme_code: BSLMTP, as_of_date: "2026-09-30", rating: "AA-"}
+
+# ---------------------------------------------------------------- cross_scheme (5)
+- id: Q20
+  type: cross_scheme
+  text: "Which holds more Infosys Ltd. as a % of AUM as on 30 Sep 2026: Aditya Birla Sun Life Flexi Cap Fund or Aditya Birla Sun Life Large Cap Fund?"
+  answer_kind: choice
+  options: {BSLEQTY: ["Flexi Cap"], BSLFEF: ["Large Cap"]}
+  gold_fn: which_holds_more
+  params: {schemes: [BSLEQTY, BSLFEF], as_of_date: "2026-09-30", isin: INE009A01021, measure: pct}
+
+- id: Q21
+  type: cross_scheme
+  text: "Which holds more HDFC Bank Ltd. as a % of AUM as on 30 Sep 2026: Aditya Birla Sun Life Flexi Cap Fund or Aditya Birla Sun Life Value Fund?"
+  answer_kind: choice
+  options: {BSLEQTY: ["Flexi Cap"], PURE: ["Value Fund"]}
+  gold_fn: which_holds_more
+  params: {schemes: [BSLEQTY, PURE], as_of_date: "2026-09-30", isin: INE040A01034, measure: pct}
+
+- id: Q22
+  type: cross_scheme
+  text: "Which holds a larger market value (Rs lakhs) of Reliance Industries Ltd. as on 30 Sep 2026: Aditya Birla Sun Life Focused Fund or Aditya Birla Sun Life Large Cap Fund?"
+  answer_kind: choice
+  options: {BTOP100: ["Focused Fund", "Focused"], BSLFEF: ["Large Cap"]}
+  gold_fn: which_holds_more
+  params: {schemes: [BTOP100, BSLFEF], as_of_date: "2026-09-30", isin: INE002A01018, measure: lakhs}
+
+- id: Q23
+  type: cross_scheme
+  text: "How many equity holdings (same company in the Equity & Equity Related section) do Aditya Birla Sun Life Flexi Cap Fund and Aditya Birla Sun Life Large & Mid Cap Fund have in common as on 30 Sep 2026?"
+  answer_kind: number
+  unit: count
+  gold_fn: overlap_count
+  params: {schemes: [BSLEQTY, ADVG], as_of_date: "2026-09-30"}
+
+- id: Q24
+  type: cross_scheme
+  text: "How many equity holdings (same company in the Equity & Equity Related section) do Aditya Birla Sun Life Large Cap Fund and Aditya Birla Sun Life Focused Fund have in common as on 30 Sep 2026?"
+  answer_kind: number
+  unit: count
+  gold_fn: overlap_count
+  params: {schemes: [BSLFEF, BTOP100], as_of_date: "2026-09-30"}
+
+# ---------------------------------------------------------------- unanswerable (4)
+- id: Q25
+  type: unanswerable
+  text: "What is the expense ratio of Aditya Birla Sun Life Flexi Cap Fund as on 30 Sep 2026?"
+  answer_kind: not_in_data
+  gold_fn: not_in_data
+  params: {}
+
+- id: Q26
+  type: unanswerable
+  text: "Who is the fund manager of Aditya Birla Sun Life Small Cap Fund as on 30 Sep 2026?"
+  answer_kind: not_in_data
+  gold_fn: not_in_data
+  params: {}
+
+- id: Q27
+  type: unanswerable
+  text: "What was the NAV per unit of Aditya Birla Sun Life Large Cap Fund on 30 Sep 2026?"
+  answer_kind: not_in_data
+  gold_fn: not_in_data
+  params: {}
+
+- id: Q28
+  type: unanswerable
+  text: "What was the 1-year return of Aditya Birla Sun Life Midcap Fund as on 30 Sep 2026?"
+  answer_kind: not_in_data
+  gold_fn: not_in_data
+  params: {}

@@ -341,7 +341,8 @@ Question schema:
 - id: Q07
   type: aggregation
   text: "What is the total % of AUM in Banks for Aditya Birla Sun Life Flexi Cap Fund as on 30 Sep 2026?"
-  answer_kind: number | text | list | not_in_data
+  answer_kind: number | list | choice | not_in_data   # 'text' became 'choice' (13 Nov 2026): every text answer
+                                                    # in the set is "which of these schemes"
   gold_fn: industry_total        # function in src/eval/gold.py
   params: {scheme_code: BSLEQTY, as_of_date: 2026-09-30, industry: "Banks"}
 ```
@@ -360,7 +361,7 @@ Question schema:
 | retrieval_hit | 1 if at least one gold row key is in the rows of the context sent to the LLM. N/A for unanswerable. |
 | gold_row_recall | Fraction of gold row keys present in that context. Shows *partial* retrieval, which matters for aggregation. |
 | numeric_correct | Correct if `abs(pred − gold) <= max(0.01 × abs(gold), 0.01)` for percentages (relative 1% or 0.01 percentage points, whichever is larger, D5). Lakhs and counts: relative 1% only. |
-| text_correct | Normalised exact match (lowercase, trim, remove punctuation, "Ltd"/"Limited" unified). Lists: set equality after normalising; Jaccard also reported. |
+| text_correct | Normalised exact match (lowercase, trim, remove punctuation, "Ltd"/"Limited" unified). Lists: set equality after normalising; Jaccard also reported. **Choice questions** ("which holds more: A or B?", changed 13 Nov 2026): a free-text answer names both options, so exact match would mark right answers wrong. The pick is the option whose name appears earliest, looking at `items` first, then `answer`. Known limit: "A holds less than B" is read as A. |
 | unanswerable_correct | For unanswerable questions: 1 if `insufficient_context` is true or the answer says the data does not contain it. Also tracked: **false refusals** on answerable questions. |
 | prompt_tokens, completion_tokens | From the provider's usage data. |
 | latency_ms | Retrieval and generation, separately. |
