@@ -42,5 +42,7 @@ def test_real_flexi_cap(tokenizer, flexi_cap):
     assert scheme.truncated and 2_000 < scheme.n_tokens < 4_000   # spec §6.3: "~2,500 tokens"
     assert len(out["row_wise"].chunks) == 86 and not any(c.truncated for c in out["row_wise"].chunks)
     assert all(c.n_tokens <= 512 for c in out["section_aware"].chunks)
+    parents = out["hierarchical"].parents
+    assert [len(p.source_rows) for p in parents][0] == 83   # whole equity section, not split
     first = out["row_wise"].chunks[0].text
     assert "Instrument: ICICI Bank Ltd." in first and first.endswith("% to AUM: 5.60")

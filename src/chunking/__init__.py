@@ -35,10 +35,7 @@ def build_chunker(name: str, settings, tokenizer: Tokenizer | None = None) -> Ch
         raise ChunkingError(f"unknown chunker {name!r}; known: {list(REGISTRY)}")
     tokenizer = tokenizer or get_tokenizer(settings.embedding.model)
     options = dict(settings.chunking.get(name, {}))
-    extra = {}
-    if name == "hierarchical":
-        extra["parent_max_tokens"] = settings.chunking.get("section_aware", {}).get("max_tokens")
-    return REGISTRY[name](tokenizer, settings.embedding.max_tokens, **extra, **options)
+    return REGISTRY[name](tokenizer, settings.embedding.max_tokens, **options)
 
 
 __all__ = ["REGISTRY", "build_chunker", "Chunk", "Chunker", "ChunkSet", "ChunkingError", "Tokenizer"]

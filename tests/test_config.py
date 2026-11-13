@@ -21,7 +21,7 @@ def _write_config(tmp_path: Path, mutate=None) -> Path:
 
 def test_real_config_loads():
     s = load_settings(env_file=NO_ENV, environ={})
-    assert s.llm.provider == "groq"
+    assert s.llm.provider == "groq" and s.llm.model == "openai/gpt-oss-120b"
     assert s.retrieval.top_k == 5
     assert s.data.eval_months == ("2026-09-30",)
     assert s.paths.raw.is_absolute() and s.paths.raw.name == "raw"
@@ -83,3 +83,10 @@ def test_secrets_never_in_repr_or_manifest():
     assert "secrets" not in manifest
     assert "gsk_secret_value" not in str(manifest)
     assert isinstance(manifest["paths"]["raw"], str)
+
+
+def test_model_follows_provider_and_models_complete(tmp_path):
+    assert load_settings(env_file=NO_ENV, environ={"LLM_PROVIDER": "mock"}).llm.model == "mock"
+    path = _write_config(tmp_path, lambda raw: raw["llm"]["models"].pop("gemini"))
+    with pytest.raises(ConfigError, match="llm.models"):
+        load_settings(path, env_file=NO_ENV, environ={})

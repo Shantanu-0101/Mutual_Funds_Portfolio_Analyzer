@@ -340,7 +340,7 @@ Scheme: ADITYA BIRLA SUN LIFE FLEXI CAP FUND | As on: 2026-09-30 | Section: Equi
 Scheme: ADITYA BIRLA SUN LIFE FLEXI CAP FUND | As on: 2026-09-30 | Section: Equity & Equity Related | Sub-section: a) Listed/awaiting listing on Stock Exchanges | Instrument: HDFC Bank Ltd. | ISIN: INE040A01034 | Industry/Rating: Banks | Qty: 15436415 | Value (Rs L): 109397.87 | % to AUM: 3.91
 ```
 
-**`hierarchical:2026-09-30:BSLEQTY:p0`** (parent of the first child): 485 tokens, 13 holding rows, rows 8–20 of sheet `BSLEQTY`
+**`hierarchical:2026-09-30:BSLEQTY:p0`** (parent of the first child): 2,750 tokens, 83 holding rows, truncated, rows 8–93 of sheet `BSLEQTY`
 
 ```text
 Scheme: ADITYA BIRLA SUN LIFE FLEXI CAP FUND
@@ -361,6 +361,9 @@ Mankind Pharma Ltd. | INE634S01028 | Pharmaceuticals & Biotechnology | 2072385 |
 United Spirits Ltd. | INE854D01024 | Beverages | 3736609 | 50593.69 | 1.81
 HCL Technologies Ltd. | INE860A01027 | IT - Software | 4103703 | 50475.55 | 1.80
 Shriram Finance Ltd. | INE721A01047 | Finance | 5000000 | 49135.00 | 1.76
+Trent Ltd. | INE849A01020 | Retailing | 1848850 | 48469.45 | 1.73
+Hindalco Industries Ltd. | INE038A01020 | Non - Ferrous Metals | 5098639 | 48018.98 | 1.72
+... (69 more lines)
 ```
 
 ### BSLCBF: ADITYA BIRLA SUN LIFE CREDIT RISK FUND (57 chunks)

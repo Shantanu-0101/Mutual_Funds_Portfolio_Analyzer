@@ -24,7 +24,14 @@ retrieval:
 
 llm:
   provider: groq             # overridden by env LLM_PROVIDER (groq | gemini | mock)
-  model: null                # chosen when building src/llm.py (D8)
+  # Model per provider (D8, decided 13 Nov 2026). Groq's live list had no Llama chat model left;
+  # gpt-oss-120b is the strongest of the three chat models there (gpt-oss-20b, qwen3.8-27b).
+  # Free tier on this account: 8,000 tokens/minute, 1,000 requests/day for all three.
+  models:
+    groq: openai/gpt-oss-120b
+    gemini: null             # set (from the live model list) before switching to gemini
+    mock: mock
+  reasoning_effort: low      # gpt-oss thinks before answering; hidden reasoning counts as output tokens
   temperature: 0
   max_output_tokens: 800
   timeout_s: 60
