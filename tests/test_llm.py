@@ -107,6 +107,8 @@ def test_overflow_not_retried(tmp_path):
     (None, "connection reset", None, _Retry),
     (401, "invalid api key", None, ProviderUnavailable),
     (403, "used all available credits", None, ProviderUnavailable),
+    (400, "Error code: 400 - Incorrect API key provided. You can obtain an API key from https://console.x.ai.",
+     None, ProviderUnavailable),                                                     # xAI's wrong/revoked key
     (400, "unknown parameter", None, LLMError),
     (400, "This model's maximum prompt length is 131072", None, ContextOverflow),
 ])
