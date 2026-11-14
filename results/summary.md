@@ -14,6 +14,31 @@ Written by `python -m src.eval report` from `results/results.csv` (140 rows: 5 m
 
 > **Not a complete run.** 33 row(s) still pending (rate limit, provider down, or answered by the fallback model); run `python -m src.eval run` again. The manifest does not mark the run complete.
 
+## Recommendation
+
+**Best chunking method for this data: fixed_size (provisional).**
+
+Rule: most correct answers; a tie goes to higher gold-row recall, then to fewer tokens per question. The pandas baseline is compared but not ranked. Full detail: [`chunking_report.xlsx`](chunking_report.xlsx).
+
+- Most correct answers: 52% (12/23), 1 more than the runner-up section_aware (48%, 11/23).
+- Highest accuracy (alone or tied) on: lookup (100%), aggregation (29%), cross_scheme (75%).
+- Weakest on debt: 0% (0/5). 5 of its 5 wrong answers are labelled retrieval miss: not every row the answer needs reached the LLM (mean gold-row recall 4%). No chunker answered any of these correctly.
+- Weakest on aggregation: 29% (2/7). 5 of its 5 wrong answers are labelled retrieval miss: not every row the answer needs reached the LLM (mean gold-row recall 46%).
+- Cost: 1,972 tokens per question; the cheapest ranked chunker is row_wise (1,143).
+
+> Not run, so not ranked: scheme_level, hierarchical.  
+> 5 question(s) left out (Q24, Q25, Q26, Q27, Q28) because the answers of section_aware are still pending (rate limit or provider down). Every ranked chunker is compared on the same 23 questions.  
+> The lead is small (1 correct answer(s) out of 23); with this few questions it could be noise.  
+
+| Question type | Questions | Best method | Accuracy | Decided by |
+| --- | --- | --- | --- | --- |
+| lookup | 7 | **row_wise** | 100% | fewer tokens (tied on accuracy and recall) |
+| aggregation | 7 | **header_window** | 29% | gold-row recall (tied on accuracy) |
+| debt | 5 | none | – | no chunker answered any correctly |
+| cross_scheme | 4 | **fixed_size** | 75% | gold-row recall (tied on accuracy) |
+
+The pandas baseline (no chunking; compared, not ranked) has no answers yet: 28 of 28 rows are pending. Run the evaluation again.
+
 ## 1. Accuracy by method and question type
 
 Correct answers / questions. Unanswerable questions count as correct when the method says the data does not contain the answer.
