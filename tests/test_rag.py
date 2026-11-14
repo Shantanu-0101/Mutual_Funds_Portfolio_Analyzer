@@ -95,6 +95,26 @@ def test_embedder_cache(tmp_path):
     Embedder("m", None, encode_fn=enc).load()   # injected encoder: load() is a no-op
 
 
+def test_embedder_cache_works_from_another_thread(tmp_path):
+    """The app builds the embedder once and uses it from each page run's own thread."""
+    import threading
+
+    emb = Embedder("m", tmp_path / "emb.sqlite", encode_fn=bow_encode, query_prefix="")
+    emb.embed_documents(["first text"])
+    out, errors = [], []
+
+    def work():
+        try:
+            out.append(emb.embed_documents(["first text", "second text"]))
+        except Exception as e:          # noqa: BLE001
+            errors.append(e)
+
+    t = threading.Thread(target=work)
+    t.start()
+    t.join()
+    assert not errors and out[0].shape[0] == 2 and emb.hits == 1 and emb.misses == 2
+
+
 def test_metadata_round_trip(env):
     h = build_chunker("hierarchical", env.s, TOK).build(env.sheet)
     for c in (h.chunks[0], h.parents[0]):
@@ -130,6 +150,10 @@ def test_where_filter():
     assert where_filter() is None
     assert where_filter("X") == {"scheme_code": "X"}
     assert where_filter("X", DATE) == {"$and": [{"scheme_code": "X"}, {"as_of_date": DATE}]}
+    assert where_filter(["X"]) == {"scheme_code": "X"}
+    assert where_filter([]) is None
+    assert where_filter(["X", "Y", "X"], DATE) == {"$and": [{"scheme_code": {"$in": ["X", "Y"]}},
+                                                            {"as_of_date": DATE}]}
 
 
 def test_retrieve_top_k_and_context_rows(env):

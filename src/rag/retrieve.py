@@ -9,7 +9,7 @@ at most top_k (often fewer) whole sections.
 ``score`` is cosine similarity (1 - Chroma's cosine distance); for a parent it
 is the best score among its retrieved children.
 
-The optional scheme / month filter (FR-3.4) is used by the app. The main
+The optional scheme / month filter (FR-3.4) is used by the app (one or several schemes). The main
 evaluation runs without it (D4).
 """
 
@@ -50,8 +50,15 @@ class Retrieval:
         return list(seen)
 
 
-def where_filter(scheme_code: str | None = None, as_of_date: str | None = None) -> dict | None:
-    parts = [{"scheme_code": scheme_code}] if scheme_code else []
+def where_filter(scheme_code: str | list[str] | tuple[str, ...] | None = None,
+                 as_of_date: str | None = None) -> dict | None:
+    """Chroma ``where`` for the optional filters. ``scheme_code`` may be one code or several (the app's
+    scheme picker); several become ``$in``, one stays a plain match."""
+    codes = [scheme_code] if isinstance(scheme_code, str) else list(dict.fromkeys(scheme_code or []))
+    if len(codes) == 1:
+        parts = [{"scheme_code": codes[0]}]
+    else:
+        parts = [{"scheme_code": {"$in": codes}}] if codes else []
     parts += [{"as_of_date": as_of_date}] if as_of_date else []
     if not parts:
         return None
@@ -79,7 +86,7 @@ class Retriever:
         return self._collections[chunker]
 
     def retrieve(self, question: str, chunker: str, top_k: int | None = None,
-                 scheme_code: str | None = None, as_of_date: str | None = None) -> Retrieval:
+                 scheme_code: str | list[str] | None = None, as_of_date: str | None = None) -> Retrieval:
         top_k = top_k or self.settings.retrieval.top_k
         self.embedder.load()                       # model loading is not retrieval latency
         t0 = time.perf_counter()
