@@ -2,6 +2,7 @@
 # requirements-lock.txt pins every transitive package too, for an exact rebuild.
 pandas==3.1.1
 xlrd==2.0.2            # reads the legacy .xls files (openpyxl cannot)
+openpyxl==3.1.5        # writes results/chunking_report.xlsx (added 14 Nov 2026, Phase 5c)
 pyarrow==26.0.1        # parquet
 PyYAML==6.0.3
 python-dotenv==1.2.4

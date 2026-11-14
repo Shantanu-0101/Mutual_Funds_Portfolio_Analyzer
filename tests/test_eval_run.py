@@ -201,6 +201,8 @@ def test_report(settings, qfile):
     assert "| **row_wise** | 0% (0/1) | 100% (1/1) | 100% (1/1) | **67% (2/3)** |" in text
     assert "*retrieval miss*" in text and "Not a complete run" not in text
     assert (settings.paths.results / report.CHART_FILE).stat().st_size > 1000
+    assert "## Recommendation" in text and "Best chunking method for this data: row_wise" in text
+    assert (settings.paths.results / "chunking_report.xlsx").stat().st_size > 1000
 
 
 def test_rescore_matches_live_scores_and_records_reason(settings, qfile):

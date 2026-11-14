@@ -15,6 +15,9 @@ Tables:
    the answerable ones.
 5. Status counts (anything not ``ok``).
 6. Up to three failure examples per method, labelled as in ``runner.failure_label``.
+
+Above the tables: the recommendation (best chunker and why, ``src.eval.recommend``). The same verdict
+and the tables go to ``results/chunking_report.xlsx`` (``src.eval.excel_report``).
 """
 
 from __future__ import annotations
@@ -25,6 +28,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.eval.questions import TYPES
+from src.eval.recommend import Recommendation, recommend, verdict_line
 from src.eval.runner import MANIFEST_FILE, METHODS, RESULTS_FILE
 
 SUMMARY_FILE = "summary.md"
@@ -106,7 +110,23 @@ def failure_examples(df: pd.DataFrame, method: str, n: int = 3) -> list[pd.Serie
     return picked
 
 
-def summary_md(df: pd.DataFrame, manifest: dict) -> str:
+def recommendation_md(rec: Recommendation) -> list[str]:
+    lines = ["## Recommendation", "", f"**{verdict_line(rec)}**", "",
+             "Rule: most correct answers; a tie goes to higher gold-row recall, then to fewer tokens per question. "
+             "The pandas baseline is compared but not ranked. Full detail: "
+             "[`chunking_report.xlsx`](chunking_report.xlsx).", ""]
+    lines += [f"- {r}" for r in rec.reasons] + [""]
+    if rec.caveats:
+        lines += [f"> {c}  " for c in rec.caveats] + [""]
+    body = [[b.type, b.n, ", ".join(f"**{m}**" for m in b.best) or "none",
+             f"{b.accuracy:.0%}" if b.best else "–", b.decided_by] for b in rec.by_type]
+    lines += _md(["Question type", "Questions", "Best method", "Accuracy", "Decided by"], body, right_from=5)
+    if rec.baseline_note:
+        lines += [rec.baseline_note, ""]
+    return lines
+
+
+def summary_md(df: pd.DataFrame, manifest: dict, rec: Recommendation | None = None) -> str:
     methods, types = _methods(df), _types(df)
     llm = manifest.get("llm", {})
     sessions = manifest.get("sessions", [])
@@ -139,7 +159,9 @@ def summary_md(df: pd.DataFrame, manifest: dict) -> str:
                   + (f"{len(other_models)} row(s) answered by another model. " if len(other_models) else "")
                   + ("The manifest does not mark the run complete." if not manifest.get("complete") else ""), ""]
 
-    acc = accuracy_table(df)
+    if rec is not None:
+        lines += recommendation_md(rec)
+
     lines += ["## 1. Accuracy by method and question type", "",
               "Correct answers / questions. Unanswerable questions count as correct when the method says the "
               "data does not contain the answer.", ""]
@@ -256,8 +278,20 @@ def accuracy_chart(df: pd.DataFrame, path: Path) -> None:
 
 
 def write_report(results_dir: Path) -> Path:
+    """Write summary.md, the chart and (when there are chunker rows) chunking_report.xlsx; return summary.md."""
+    from src.eval.excel_report import EXCEL_FILE, write_excel
+
     df, manifest = load(results_dir)
     accuracy_chart(df, results_dir / CHART_FILE)
+    try:
+        rec = recommend(df)
+    except ValueError:                          # no chunker rows, or none answered yet: no verdict to give
+        rec = None
     path = results_dir / SUMMARY_FILE
-    path.write_text(summary_md(df, manifest), encoding="utf-8")
+    path.write_text(summary_md(df, manifest, rec), encoding="utf-8")
+    excel = results_dir / EXCEL_FILE
+    if rec is not None:
+        write_excel(df, manifest, rec, excel)
+    elif excel.exists():
+        excel.unlink()                          # never leave a verdict from older results next to new ones
     return path

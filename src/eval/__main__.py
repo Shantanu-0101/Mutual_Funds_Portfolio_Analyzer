@@ -8,6 +8,7 @@
 - ``rescore``       re-score the stored answers with the current metrics (no LLM calls); ``--reason`` is
                     recorded in the manifest
 - ``report``        ``results.csv`` → ``results/summary.md`` + ``accuracy_by_method.png``
+                    + ``chunking_report.xlsx`` (best chunking method and why)
 """
 
 from __future__ import annotations
@@ -46,7 +47,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "report":
         from src.eval.report import write_report
 
+        from src.eval.excel_report import EXCEL_FILE
+
         print(f"wrote {write_report(out_dir)}")
+        if (out_dir / EXCEL_FILE).exists():
+            print(f"wrote {out_dir / EXCEL_FILE}")
         return 0
 
     questions = load_questions(eval_months=settings.data.eval_months)
