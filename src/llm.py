@@ -152,6 +152,9 @@ _OVERFLOW_HINTS = ("request too large", "context_length_exceeded", "context leng
                    "maximum context", "too many tokens", "exceeds the maximum", "maximum prompt length")
 
 
+_BAD_KEY = re.compile(r"(incorrect|invalid|revoked|expired|missing)\s+api[\s_-]?key|api[\s_-]?key\s+(is\s+)?(invalid|revoked)")
+
+
 def scrub(message: str) -> str:
     """Remove account identifiers (Groq organization ids) from provider error text before it is stored."""
     return re.sub(r"\borg_[A-Za-z0-9]+", "org_<redacted>", message)
@@ -170,8 +173,8 @@ def classify_http_error(status: int | None, message: str, retry_after: float | N
         return _Retry(message, retry_after)
     if status is None or status >= 500 or status == 408:
         return _Retry(message)
-    if status in (401, 402, 403):
-        return ProviderUnavailable(message)
+    if status in (401, 402, 403) or _BAD_KEY.search(text):
+        return ProviderUnavailable(message)   # xAI answers a wrong or revoked key with HTTP 400
     return LLMError(message)
 
 

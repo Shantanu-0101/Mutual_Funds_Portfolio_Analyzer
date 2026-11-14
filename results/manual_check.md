@@ -8,16 +8,16 @@ Columns in every sheet: C instrument, D ISIN, E industry / rating, F quantity, G
 
 | Id | Type | Gold answer | OK? |
 |---|---|---|---|
-| Q01 | lookup | 5.5967 % | [ ] |
-| Q03 | lookup | 3.3895 % | [ ] |
-| Q04 | lookup | 19,880.41 Rs lakhs | [ ] |
-| Q05 | lookup | 7.8505 % | [ ] |
-| Q08 | aggregation | 19.2399 % | [ ] |
-| Q09 | aggregation | 57.0053 % | [ ] |
-| Q10 | aggregation | 27.4111 % | [ ] |
-| Q20 | cross_scheme | BSLFEF (Large Cap) | [ ] |
-| Q21 | cross_scheme | PURE (Value Fund) | [ ] |
-| Q23 | cross_scheme | 29 | [ ] |
+| Q01 | lookup | 5.5967 % | [OK] |
+| Q03 | lookup | 3.3895 % | [OK] |
+| Q04 | lookup | 19,880.41 Rs lakhs | [Ok] |
+| Q05 | lookup | 7.8505 % | [OK] |
+| Q08 | aggregation | 19.2399 % | [OK] |
+| Q09 | aggregation | 57.0053 % | [Ok] |
+| Q10 | aggregation | 27.4111 % | [Ok] |
+| Q20 | cross_scheme | BSLFEF (Large Cap) | [Ok] |
+| Q21 | cross_scheme | PURE (Value Fund) | [Ok] |
+| Q23 | cross_scheme | 29 | [OK] |
 
 ## Q01 · lookup
 
@@ -31,7 +31,7 @@ Columns in every sheet: C instrument, D ISIN, E industry / rating, F quantity, G
 |---|---|---|---|---|---|---|---|
 | 1 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'BSLEQTY'!H8` | BSLEQTY | ICICI Bank Ltd. | INE090A01021 | Banks | 156,610.49 | 5.5967 |
 
-- [ ] checked against the Excel
+- [Ok] checked against the Excel
 
 ## Q03 · lookup
 
@@ -45,7 +45,7 @@ Columns in every sheet: C instrument, D ISIN, E industry / rating, F quantity, G
 |---|---|---|---|---|---|---|---|
 | 1 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'BSLTA1'!H8` | BSLTA1 | TD Power Systems Ltd. | INE419M01035 | Electrical Equipment | 20,742.59 | 3.3895 |
 
-- [ ] checked against the Excel
+- [Ok] checked against the Excel
 
 ## Q04 · lookup
 
@@ -59,7 +59,7 @@ Columns in every sheet: C instrument, D ISIN, E industry / rating, F quantity, G
 |---|---|---|---|---|---|---|---|
 | 1 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'MIDCAP'!G8` | MIDCAP | The Federal Bank Ltd. | INE171A01029 | Banks | 19,880.41 | 3.0352 |
 
-- [ ] checked against the Excel
+- [Ok] checked against the Excel
 
 ## Q05 · lookup
 
@@ -73,7 +73,7 @@ Columns in every sheet: C instrument, D ISIN, E industry / rating, F quantity, G
 |---|---|---|---|---|---|---|---|
 | 1 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'BSLNMF'!H9` | BSLNMF | Tech Mahindra Ltd. | INE669C01036 | IT - Software | 28,393.74 | 7.8505 |
 
-- [ ] checked against the Excel
+- [Ok] checked against the Excel
 
 ## Q08 · aggregation
 
@@ -93,7 +93,7 @@ Columns in every sheet: C instrument, D ISIN, E industry / rating, F quantity, G
 | 6 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'BSLEQTY'!H32` | BSLEQTY | Axis Bank Ltd. | INE238A01034 | Banks | 42,910.00 | 1.5335 |
 | 7 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'BSLEQTY'!H51` | BSLEQTY | AU Small Finance Bank Ltd. | INE949L01017 | Banks | 27,783.25 | 0.9929 |
 
-- [ ] checked against the Excel
+- [Ok] checked against the Excel
 
 ## Q09 · aggregation
 
@@ -125,7 +125,7 @@ Columns in every sheet: C instrument, D ISIN, E industry / rating, F quantity, G
 | 18 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'BSLNMF'!H47` | BSLNMF | Adobe Inc | US00724F1012 | IT - Software | 2,544.85 | 0.7036 |
 | 19 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'BSLNMF'!H48` | BSLNMF | Microsoft Corporation | US5949181045 | IT - Software | 2,434.89 | 0.6732 |
 
-- [ ] checked against the Excel
+- [Ok] checked against the Excel
 
 ## Q10 · aggregation
 
@@ -143,7 +143,7 @@ Columns in every sheet: C instrument, D ISIN, E industry / rating, F quantity, G
 | 4 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'BSLFEF'!H11` | BSLFEF | Kotak Mahindra Bank Ltd. | INE237A01036 | Banks | 114,675.00 | 4.1054 |
 | 5 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'BSLFEF'!H12` | BSLFEF | State Bank of India | INE062A01020 | Banks | 95,069.66 | 3.4035 |
 
-- [ ] checked against the Excel
+- [Ok] checked against the Excel
 
 ## Q20 · cross_scheme
 
@@ -158,7 +158,7 @@ Columns in every sheet: C instrument, D ISIN, E industry / rating, F quantity, G
 | 1 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'BSLEQTY'!H13` | BSLEQTY | Infosys Ltd. | INE009A01021 | IT - Software | 56,291.08 | 2.0117 |
 | 2 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'BSLFEF'!H13` | BSLFEF | Infosys Ltd. | INE009A01021 | IT - Software | 89,469.00 | 3.2030 |
 
-- [ ] checked against the Excel
+- [Ok] checked against the Excel
 
 ## Q21 · cross_scheme
 
@@ -173,7 +173,7 @@ Columns in every sheet: C instrument, D ISIN, E industry / rating, F quantity, G
 | 1 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'BSLEQTY'!H9` | BSLEQTY | HDFC Bank Ltd. | INE040A01034 | Banks | 109,397.87 | 3.9095 |
 | 2 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'PURE'!H8` | PURE | HDFC Bank Ltd. | INE040A01034 | Banks | 32,547.08 | 4.8875 |
 
-- [ ] checked against the Excel
+- [Ok] checked against the Excel
 
 ## Q23 · cross_scheme
 
@@ -244,4 +244,4 @@ Columns in every sheet: C instrument, D ISIN, E industry / rating, F quantity, G
 | 57 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'ADVG'!D9` | ADVG | AU Small Finance Bank Ltd. | INE949L01017 | Banks | 19,326.93 | 3.4497 |
 | 58 | `30092026_ABSLMF_MonthlyDisclosure.xls › 'BSLEQTY'!D51` | BSLEQTY | AU Small Finance Bank Ltd. | INE949L01017 | Banks | 27,783.25 | 0.9929 |
 
-- [ ] checked against the Excel
+- [Ok] checked against the Excel

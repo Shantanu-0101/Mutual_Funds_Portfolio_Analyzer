@@ -1,0 +1,184 @@
+{
+ "created_at": "2026-11-14T10:35:41+05:30",
+ "setup": {
+  "config_sha256": "11b605b4b3d9921ac220aa3970b10dbb5e13c7925486f5245d706cc6ff7292c9",
+  "llm_provider": "groq",
+  "llm_model": "openai/gpt-oss-120b",
+  "questions_sha256": "b8135a25f7c4d0a0a833642f72e427907ee324147cee58cf0d2c2a4d94681ac5"
+ },
+ "llm": {
+  "provider": "groq",
+  "model": "openai/gpt-oss-120b",
+  "fallback": "gemini",
+  "fallback_rows_rerun": true
+ },
+ "embedding_model": "BAAI/bge-small-en-v1.5",
+ "methods": [
+  "fixed_size",
+  "row_wise",
+  "header_window",
+  "section_aware",
+  "baseline"
+ ],
+ "questions": [
+  "Q01",
+  "Q02",
+  "Q03",
+  "Q04",
+  "Q05",
+  "Q06",
+  "Q07",
+  "Q08",
+  "Q09",
+  "Q10",
+  "Q11",
+  "Q12",
+  "Q13",
+  "Q14",
+  "Q15",
+  "Q16",
+  "Q17",
+  "Q18",
+  "Q19",
+  "Q20",
+  "Q21",
+  "Q22",
+  "Q23",
+  "Q24",
+  "Q25",
+  "Q26",
+  "Q27",
+  "Q28"
+ ],
+ "data_files": {
+  "raw/30092026_ABSLMF_MonthlyDisclosure.xls": "8eb8ef4f1a34084f1ed8b29080a563f11e8c5780e8e935598d7d2dde045faac7",
+  "raw/31082026_ABSLMF_MonthlyDisclosure.xls": "68a8279d8c7c2f1d259784664827837eba260983d69fbc06646e860c45206dc8",
+  "raw/31102026_ABSLMF_MonthlyDisclosure.xls": "494538445357870ffc143cd608cde4e1be8fdc1c59346c62a2f58d488e1fd433",
+  "raw/ABSL_Monthly_Portfolio_Report_July 2026.xls": "600bfcb172b17a38b5df7c70d13af687f0c2fec2b7e5eacb5906184b6ab5bb8c",
+  "processed/holdings.parquet": "288fec0c31e6ac619dffe07bee53c5c24abf5a6e3f40dd58cd68bec69f358351"
+ },
+ "config": {
+  "paths": {
+   "raw": "C:\\Users\\DELL\\OneDrive\\Desktop\\MFPA\\data\\raw",
+   "processed": "C:\\Users\\DELL\\OneDrive\\Desktop\\MFPA\\data\\processed",
+   "chroma": "C:\\Users\\DELL\\OneDrive\\Desktop\\MFPA\\data\\chroma",
+   "cache": "C:\\Users\\DELL\\OneDrive\\Desktop\\MFPA\\data\\cache",
+   "results": "C:\\Users\\DELL\\OneDrive\\Desktop\\MFPA\\results"
+  },
+  "data": {
+   "file_glob": "*ABSL*.xls",
+   "eval_months": [
+    "2026-09-30"
+   ]
+  },
+  "embedding": {
+   "model": "BAAI/bge-small-en-v1.5",
+   "max_tokens": 512,
+   "batch_size": 32
+  },
+  "retrieval": {
+   "top_k": 5
+  },
+  "llm": {
+   "provider": "groq",
+   "fallback": "gemini",
+   "models": {
+    "xai": "grok-4.20-0309-non-reasoning",
+    "groq": "openai/gpt-oss-120b",
+    "gemini": null,
+    "mock": "mock"
+   },
+   "reasoning_effort": "low",
+   "temperature": 0,
+   "max_output_tokens": 2000,
+   "timeout_s": 60,
+   "retries": 3
+  },
+  "chunking": {
+   "fixed_size": {
+    "chunk_tokens": 256,
+    "overlap_tokens": 32
+   },
+   "header_window": {
+    "rows_per_chunk": 10
+   },
+   "scheme_level": {
+    "on_overflow": "truncate_and_warn"
+   },
+   "section_aware": {
+    "max_tokens": 512
+   },
+   "hierarchical": {
+    "child": "row",
+    "parent": "section"
+   }
+  },
+  "baseline": {
+   "timeout_s": 10
+  },
+  "eval": {
+   "rel_tolerance": 0.01,
+   "abs_tolerance_pct_points": 0.01,
+   "manual_check_n": 10,
+   "seed": 42
+  },
+  "config_file": "C:\\Users\\DELL\\OneDrive\\Desktop\\MFPA\\config.yaml"
+ },
+ "sessions": [
+  {
+   "started_at": "2026-11-14T10:35:41+05:30",
+   "fresh": true,
+   "commit": "9c2f0148b0535b6b1d1feb97f37fc7d8f4cf6fd4",
+   "branch": "phase-5-eval",
+   "dirty": false
+  },
+  {
+   "started_at": "2026-11-14T11:34:03+05:30",
+   "fresh": false,
+   "commit": "9c2f0148b0535b6b1d1feb97f37fc7d8f4cf6fd4",
+   "branch": "phase-5-eval",
+   "dirty": true,
+   "finished_at": "2026-11-14T11:57:47+05:30",
+   "asked": 128,
+   "skipped": 12
+  }
+ ],
+ "rows": 140,
+ "expected_rows": 140,
+ "pending": [
+  "section_aware:Q24",
+  "section_aware:Q25",
+  "section_aware:Q26",
+  "section_aware:Q27",
+  "section_aware:Q28",
+  "baseline:Q01",
+  "baseline:Q02",
+  "baseline:Q03",
+  "baseline:Q04",
+  "baseline:Q05",
+  "baseline:Q06",
+  "baseline:Q07",
+  "baseline:Q08",
+  "baseline:Q09",
+  "baseline:Q10",
+  "baseline:Q11",
+  "baseline:Q12",
+  "baseline:Q13",
+  "baseline:Q14",
+  "baseline:Q15",
+  "baseline:Q16",
+  "baseline:Q17",
+  "baseline:Q18",
+  "baseline:Q19",
+  "baseline:Q20",
+  "baseline:Q21",
+  "baseline:Q22",
+  "baseline:Q23",
+  "baseline:Q24",
+  "baseline:Q25",
+  "baseline:Q26",
+  "baseline:Q27",
+  "baseline:Q28"
+ ],
+ "complete": false
+}

@@ -22,7 +22,7 @@ def _write_config(tmp_path: Path, mutate=None) -> Path:
 def test_real_config_loads():
     s = load_settings(env_file=NO_ENV, environ={})
     assert s.llm.provider == "groq" and s.llm.model == "openai/gpt-oss-120b"
-    assert s.llm.fallback is None and s.llm.models["xai"] is None
+    assert s.llm.fallback == "gemini" and s.llm.models["xai"] == "grok-4.20-0309-non-reasoning"
     assert s.retrieval.top_k == 5
     assert s.data.eval_months == ("2026-09-30",)
     assert s.paths.raw.is_absolute() and s.paths.raw.name == "raw"
@@ -70,9 +70,9 @@ def test_bad_eval_month_rejected(tmp_path):
 
 def test_env_file_read_and_real_env_wins(tmp_path):
     env_file = tmp_path / ".env"
-    env_file.write_text("LLM_PROVIDER=gemini\nGROQ_API_KEY=from-file\n", encoding="utf-8")
+    env_file.write_text("LLM_PROVIDER=xai\nGROQ_API_KEY=from-file\n", encoding="utf-8")
     s = load_settings(env_file=env_file, environ={"GROQ_API_KEY": "from-env"})
-    assert s.llm.provider == "gemini"
+    assert s.llm.provider == "xai"
     assert s.secrets.groq_api_key == "from-env"
     assert s.secrets.gemini_api_key is None
 
@@ -99,6 +99,6 @@ def test_fallback_env_override_and_checks():
     assert "xk" not in repr(s) and "xk" not in str(s.to_dict())
     assert load_settings(env_file=NO_ENV, environ={"LLM_FALLBACK": "none"}).llm.fallback is None
     with pytest.raises(ConfigError, match="llm.fallback"):
-        load_settings(env_file=NO_ENV, environ={"LLM_FALLBACK": "groq"})      # same as provider
+        load_settings(env_file=NO_ENV, environ={"LLM_PROVIDER": "groq", "LLM_FALLBACK": "groq"})  # same as provider
     with pytest.raises(ConfigError, match="llm.fallback"):
         load_settings(env_file=NO_ENV, environ={"LLM_FALLBACK": "openai"})

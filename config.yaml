@@ -24,21 +24,25 @@ retrieval:
 
 llm:
   # Plan (13 Nov 2026): xAI (paid) answers, Groq (free tier) is the fallback when xAI is rate-limited,
-  # out of credit or down. Stays on groq until the xAI model is picked from the live list (D8b);
-  # then: provider: xai, fallback: groq.
+  # out of credit or down (D8b). Switched to xai on 14 Nov 2026 for the Phase 5 run.
+  # The eval runner re-runs any row the fallback answered (a different model), so the recorded
+  # results come from the xai model only.
+  # 14 Nov 2026: the xAI key was rejected and no paid key is available for now, so Groq (free) answers
+  # and Gemini (free) is the fallback. Gemini stays inactive until GEMINI_API_KEY is in .env and
+  # models.gemini is set. To go back to the paid run: provider: xai, fallback: groq.
   provider: groq             # overridden by env LLM_PROVIDER (xai | groq | gemini | mock)
-  fallback: null             # overridden by env LLM_FALLBACK; null or "none" = no fallback
+  fallback: gemini           # overridden by env LLM_FALLBACK; null or "none" = no fallback
   # Model per provider (D8, decided 13 Nov 2026). Groq's live list had no Llama chat model left;
   # gpt-oss-120b is the strongest of the three chat models there (gpt-oss-20b, qwen3.8-27b).
   # Free tier on this account: 8,000 tokens/minute, 1,000 requests/day for all three.
   models:
-    xai: null                # set from `python -m src.llm models xai` (D8b) before switching to xai
+    xai: grok-4.20-0309-non-reasoning   # from the live list 14 Nov 2026 (D8b); non-reasoning, your pick
     groq: openai/gpt-oss-120b
     gemini: null             # set (from the live model list) before switching to gemini
     mock: mock
   reasoning_effort: low      # groq gpt-oss only (xAI's reasoning models reject it); gpt-oss thinks before answering; hidden reasoning counts as output tokens
   temperature: 0
-  max_output_tokens: 800
+  max_output_tokens: 2000    # was 800; raised 14 Nov 2026: 15 replies of the first run were cut at 800 (long source lists)
   timeout_s: 60
   retries: 3
 

@@ -19,7 +19,7 @@ MSGS = [{"role": "system", "content": "rules"}, {"role": "user", "content": "que
 
 
 def settings_for(tmp_path, provider="mock", **env):
-    s = load_settings(env_file=NO_ENV, environ={"LLM_PROVIDER": provider, **env})
+    s = load_settings(env_file=NO_ENV, environ={"LLM_PROVIDER": provider, "LLM_FALLBACK": "none", **env})
     return replace(s, paths=replace(s.paths, cache=tmp_path / "cache"))
 
 
@@ -29,8 +29,10 @@ def test_provider_from_env(tmp_path):
         make_provider(settings_for(tmp_path, "groq"))
     with pytest.raises(LLMError, match="llm.models.gemini"):
         make_provider(settings_for(tmp_path, "gemini", GEMINI_API_KEY="x"))
+    s = settings_for(tmp_path, "xai", XAI_API_KEY="x")
+    no_model = replace(s, llm=replace(s.llm, models={**s.llm.models, "xai": None}))
     with pytest.raises(LLMError, match="llm.models.xai"):
-        make_provider(settings_for(tmp_path, "xai", XAI_API_KEY="x"))
+        make_provider(no_model)
 
 
 def test_cache_hit_miss_and_fresh(tmp_path):
@@ -105,6 +107,8 @@ def test_overflow_not_retried(tmp_path):
     (None, "connection reset", None, _Retry),
     (401, "invalid api key", None, ProviderUnavailable),
     (403, "used all available credits", None, ProviderUnavailable),
+    (400, "Error code: 400 - Incorrect API key provided. You can obtain an API key from https://console.x.ai.",
+     None, ProviderUnavailable),                                                     # xAI's wrong/revoked key
     (400, "unknown parameter", None, LLMError),
     (400, "This model's maximum prompt length is 131072", None, ContextOverflow),
 ])

@@ -68,6 +68,8 @@ OPTS = {"BSLEQTY": ["Flexi Cap"], "BSLFEF": ["Large Cap"]}
     (ans("Both are similar.", items=["Large Cap Fund"]), "BSLFEF"),                     # items win over prose
     (ans("I cannot tell."), None),
     (ans("flexicap"), None),                                                            # whole words only
+    (ans("Result: 1 item(s): BSLFEF", items=["BSLFEF"]), "BSLFEF"),                     # scheme code (baseline)
+    (ans("bslfef2"), None),
 ])
 def test_choice_pick(answer, pick):
     assert choice_pick(answer, OPTS) == pick
