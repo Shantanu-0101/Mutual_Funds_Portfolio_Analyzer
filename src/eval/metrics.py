@@ -11,7 +11,10 @@ All functions are pure, so each rule is unit-tested on its edges.
   options ("Large Cap holds more than Flexi Cap"), so exact match would score
   correct answers as wrong. Rule used instead: look at ``items`` first, then
   the ``answer`` text; the option whose alias appears **earliest** is the
-  pick. Deterministic, and the same for every method.
+  pick. The option's key (the scheme code, e.g. ``BSLFEF``) is always an
+  alias too: the pandas baseline answers with codes (fixed 14 Nov 2026, after
+  the first full run scored three correct baseline answers as wrong).
+  Deterministic, and the same for every method.
 - ``refused``: ``insufficient_context`` is true, or the answer has no value
   and no items and its text says the data does not contain it.
 - ``retrieval_hit`` / ``gold_row_recall``: ``None`` (not applicable) for
@@ -62,7 +65,7 @@ def choice_pick(answer: dict, options: dict[str, list[str]]) -> str | None:
         t = f" {normalise_text(text)} "
         best: tuple[int, str] | None = None
         for key, aliases in options.items():
-            for alias in aliases:
+            for alias in [key, *aliases]:          # the scheme code itself names the option too
                 pos = t.find(f" {normalise_text(alias)} ")
                 if pos >= 0 and (best is None or pos < best[0]):
                     best = (pos, key)

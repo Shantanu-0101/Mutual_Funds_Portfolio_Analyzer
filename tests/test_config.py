@@ -21,8 +21,8 @@ def _write_config(tmp_path: Path, mutate=None) -> Path:
 
 def test_real_config_loads():
     s = load_settings(env_file=NO_ENV, environ={})
-    assert s.llm.provider == "groq" and s.llm.model == "openai/gpt-oss-120b"
-    assert s.llm.fallback is None and s.llm.models["xai"] is None
+    assert s.llm.provider == "xai" and s.llm.model == "grok-4.20-0309-non-reasoning"
+    assert s.llm.fallback == "groq" and s.llm.models["groq"] == "openai/gpt-oss-120b"
     assert s.retrieval.top_k == 5
     assert s.data.eval_months == ("2026-09-30",)
     assert s.paths.raw.is_absolute() and s.paths.raw.name == "raw"
@@ -99,6 +99,6 @@ def test_fallback_env_override_and_checks():
     assert "xk" not in repr(s) and "xk" not in str(s.to_dict())
     assert load_settings(env_file=NO_ENV, environ={"LLM_FALLBACK": "none"}).llm.fallback is None
     with pytest.raises(ConfigError, match="llm.fallback"):
-        load_settings(env_file=NO_ENV, environ={"LLM_FALLBACK": "groq"})      # same as provider
+        load_settings(env_file=NO_ENV, environ={"LLM_PROVIDER": "groq", "LLM_FALLBACK": "groq"})  # same as provider
     with pytest.raises(ConfigError, match="llm.fallback"):
         load_settings(env_file=NO_ENV, environ={"LLM_FALLBACK": "openai"})

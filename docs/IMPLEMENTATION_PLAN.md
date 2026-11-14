@@ -219,6 +219,10 @@ Metrics: tolerance edges (just inside / just outside 1%), the 0.01-point floor f
 
 *Built 13 Nov 2026 (5a):* `python -m src.eval gold` writes `results/gold_answers.md` (all 28); `python -m src.eval manual-check` writes `results/manual_check.md`. The manual sample is drawn from the 24 answerable questions (nothing to check on unanswerable ones). Gold sums were cross-checked against the file's own Total rows (Q12–Q14, Q16).
 
+*Stop A passed 14 Nov 2026:* you checked all 10 manual-check questions against the Excel; all OK (`results/manual_check.md`).
+
+*Built 14 Nov 2026 (5b):* `src/eval/runner.py` and `src/eval/report.py`, tests in `tests/test_eval_run.py`. LLM for the run: xAI `grok-4.20-0309-non-reasoning` (your pick), Groq as fallback; rows the fallback answers are marked pending and re-asked on the main model, so the recorded results come from grok only. Rows that are rate-limited, provider-unavailable or hit a sandbox crash are also pending; `context_overflow` is a final, recorded failure (D9). A resumed run refuses to continue a `results.csv` started with another config, model or question file. Failure labels: *format error*, *context overflow*, *retrieval miss* (RAG answered but not every gold row was in the context), *generation error* (everything else).
+
 **Commit:** `phase 5a: gold, questions, metrics` (after stop A) and `phase 5b: full evaluation run` (after stop B, with `results/` committed).
 
 ---
