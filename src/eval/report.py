@@ -125,6 +125,11 @@ def summary_md(df: pd.DataFrame, manifest: dict) -> str:
                 ["Cached answers", f"{int(df['cached'].sum())} of {len(df)}"]]
     lines += _md(["", ""], run_rows, right_from=2)
 
+    not_run = [m for m in METHODS if m not in methods]
+    if not_run:
+        lines += [f"> **Not run in this run:** {', '.join(f'`{m}`' for m in not_run)}. They are missing from "
+                  "every table below, so do not compare them by absence.", ""]
+
     pending = df[df["pending"] == 1]
     other_models = df[(df["model"] != "") & (df["model"] != llm.get("model"))]
     if len(pending) or len(other_models) or not manifest.get("complete", False):

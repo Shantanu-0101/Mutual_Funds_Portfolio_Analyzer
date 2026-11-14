@@ -216,3 +216,9 @@ def test_rescore_matches_live_scores_and_records_reason(settings, qfile):
     assert next(r for r in after if r["method"] == "baseline" and r["qid"] == "Q02")["correct"] == "1"
     m = json.loads((settings.paths.results / runner.MANIFEST_FILE).read_text(encoding="utf-8"))
     assert m["rescored"][0]["reason"] == "test" and m["rescored"][0]["changed"] == []
+
+
+def test_report_names_methods_not_run(settings, qfile):
+    run(settings, qfile, {"row_wise": lambda t: rag(answer=answer_for(t))})
+    text = report.write_report(settings.paths.results).read_text(encoding="utf-8")
+    assert "**Not run in this run:**" in text and "`scheme_level`" in text and "`row_wise`," not in text

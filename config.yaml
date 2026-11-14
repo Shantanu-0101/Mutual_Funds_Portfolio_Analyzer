@@ -27,8 +27,11 @@ llm:
   # out of credit or down (D8b). Switched to xai on 14 Nov 2026 for the Phase 5 run.
   # The eval runner re-runs any row the fallback answered (a different model), so the recorded
   # results come from the xai model only.
-  provider: xai              # overridden by env LLM_PROVIDER (xai | groq | gemini | mock)
-  fallback: groq             # overridden by env LLM_FALLBACK; null or "none" = no fallback
+  # 14 Nov 2026: the xAI key was rejected and no paid key is available for now, so Groq (free) answers
+  # and Gemini (free) is the fallback. Gemini stays inactive until GEMINI_API_KEY is in .env and
+  # models.gemini is set. To go back to the paid run: provider: xai, fallback: groq.
+  provider: groq             # overridden by env LLM_PROVIDER (xai | groq | gemini | mock)
+  fallback: gemini           # overridden by env LLM_FALLBACK; null or "none" = no fallback
   # Model per provider (D8, decided 13 Nov 2026). Groq's live list had no Llama chat model left;
   # gpt-oss-120b is the strongest of the three chat models there (gpt-oss-20b, qwen3.8-27b).
   # Free tier on this account: 8,000 tokens/minute, 1,000 requests/day for all three.
