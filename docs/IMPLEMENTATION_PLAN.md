@@ -267,6 +267,13 @@ From the supervisor's brief: for our ABSL dataset, name the best chunking method
 
 UI logic is kept thin: pages call `src.rag.pipeline` and `src.baseline.pipeline`, which are already tested.
 
+*Built 14 Nov 2026:* `app/streamlit_app.py` (navigation) + `app/pages/ask.py`, `compare.py`, `results.py`; shared Streamlit code in `app/common.py`; the table-building logic in `src/app_data.py` (no Streamlit import, tested in `tests/test_app.py`, which also runs the Results page on the committed `results/` with Streamlit's `AppTest`). Three changes outside the app:
+- The scheme picker allows several schemes, so `where_filter` / `Retriever.retrieve` accept a list of scheme codes (Chroma `$in`); one code works as before. The evaluation still runs without filters (D4).
+- Bug found by opening the real page: the embedding cache's SQLite connection was created on one thread and Streamlit runs each page run on another, which SQLite refuses. `VectorCache` now opens the connection with `check_same_thread=False` and serialises calls with a lock (test added).
+- The month picker offers only months found in every Chroma collection (today September 2026). The baseline reads `data.eval_months` and ignores the scheme filter; the page says so when that applies.
+
+Checked in the browser on Groq `openai/gpt-oss-120b` with "What % of AUM does Aditya Birla Sun Life Flexi Cap Fund hold in HDFC Bank Ltd.?": Ask (fixed_size) answered 3.91%, citing row 9 of sheet BSLEQTY (parquet: 3.9095). Compare: fixed_size, row_wise, header_window, section_aware, hierarchical and the baseline all gave 3.91; scheme_level failed with *context_overflow* (19,372 tokens requested, limit 8,000 per minute on the free tier), which the page explains. Results shows the provisional verdict (`fixed_size`), the caveats, the per-type table, the Excel download and all the `summary.md` tables.
+
 **Proof:** `streamlit run app/streamlit_app.py`, then I open each page in the browser, ask one question on Ask and Compare, and take screenshots for you (verification by opening the real page, not only by running tests).
 **Commit:** `phase 6: streamlit app`. **STOP.**
 

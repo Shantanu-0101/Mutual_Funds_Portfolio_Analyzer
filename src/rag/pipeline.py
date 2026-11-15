@@ -99,7 +99,7 @@ class RagPipeline:
         return self._row_names
 
     def answer(self, question: str, chunker: str, top_k: int | None = None,
-               scheme_code: str | None = None, as_of_date: str | None = None) -> RagResult:
+               scheme_code: str | list[str] | None = None, as_of_date: str | None = None) -> RagResult:
         retrieval = self.retriever.retrieve(question, chunker, top_k, scheme_code, as_of_date)
         messages = build_messages(question, [r.chunk for r in retrieval.chunks])
         base = dict(question=question, chunker=chunker, retrieval=retrieval, model=self.llm.model,

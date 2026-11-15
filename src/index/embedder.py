@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
+import threading
 from pathlib import Path
 from typing import Callable, Sequence
 
@@ -32,12 +33,16 @@ def text_hash(text: str) -> str:
 
 
 class VectorCache:
-    """(model, text hash) → float32 vector, in SQLite."""
+    """(model, text hash) → float32 vector, in SQLite.
+
+    One connection, usable from any thread (the Streamlit app runs each page run on a new thread);
+    a lock keeps the calls one at a time."""
 
     def __init__(self, path: Path):
         path.parent.mkdir(parents=True, exist_ok=True)
         self.path = path
-        self.db = sqlite3.connect(str(path))
+        self.db = sqlite3.connect(str(path), check_same_thread=False)
+        self._lock = threading.Lock()
         self.db.execute("CREATE TABLE IF NOT EXISTS vectors (model TEXT, hash TEXT, dim INTEGER, vec BLOB, "
                         "PRIMARY KEY (model, hash))")
         self.db.commit()
@@ -47,19 +52,22 @@ class VectorCache:
         unique = list(dict.fromkeys(hashes))
         for i in range(0, len(unique), 500):
             part = unique[i:i + 500]
-            rows = self.db.execute(
-                f"SELECT hash, vec FROM vectors WHERE model = ? AND hash IN ({','.join('?' * len(part))})",
-                [model, *part]).fetchall()
+            with self._lock:
+                rows = self.db.execute(
+                    f"SELECT hash, vec FROM vectors WHERE model = ? AND hash IN ({','.join('?' * len(part))})",
+                    [model, *part]).fetchall()
             out.update({h: np.frombuffer(v, dtype=np.float32) for h, v in rows})
         return out
 
     def put_many(self, model: str, items: dict[str, np.ndarray]) -> None:
-        self.db.executemany("INSERT OR REPLACE INTO vectors VALUES (?, ?, ?, ?)",
-                            [(model, h, int(v.shape[0]), v.astype(np.float32).tobytes()) for h, v in items.items()])
-        self.db.commit()
+        rows = [(model, h, int(v.shape[0]), v.astype(np.float32).tobytes()) for h, v in items.items()]
+        with self._lock:
+            self.db.executemany("INSERT OR REPLACE INTO vectors VALUES (?, ?, ?, ?)", rows)
+            self.db.commit()
 
     def close(self) -> None:
-        self.db.close()
+        with self._lock:
+            self.db.close()
 
 
 class Embedder:
