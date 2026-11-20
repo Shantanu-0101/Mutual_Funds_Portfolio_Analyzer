@@ -11,7 +11,7 @@ import pytest
 from src.config import load_settings
 from src.llm import (
     JSON_INVALID, LLM, ContextOverflow, GeminiProvider, GroqProvider, LLMError, MockProvider, ProviderUnavailable,
-    RateLimited, XAIProvider, _Retry, classify_http_error, make_provider,
+    RateLimited, VelonaProvider, XAIProvider, _Retry, classify_http_error, make_provider,
 )
 
 NO_ENV = Path("does-not-exist.env")
@@ -245,6 +245,29 @@ def test_xai_errors(tmp_path):
 def test_xai_needs_key(tmp_path):
     with pytest.raises(LLMError, match="XAI_API_KEY"):
         XAIProvider(xai_settings(tmp_path))
+
+
+def test_velona_same_api_other_address(tmp_path):
+    s = settings_for(tmp_path, "velona", VELONA_API_KEY="vk")
+    assert s.llm.model == "x-ai/grok-4.20"
+    reply = {"choices": [{"message": {"content": '{"a": 1}'}, "finish_reason": "stop"}],
+             "usage": {"prompt_tokens": 100, "completion_tokens": 6, "total_tokens": 106}}
+    client = FakeHttp(_http(200, reply))
+    c = VelonaProvider(s, client=client).complete(MSGS, json_mode=True)
+    assert client.json["model"] == "x-ai/grok-4.20" and client.json["response_format"] == {"type": "json_object"}
+    assert (c.text, c.completion_tokens, c.reasoning_tokens) == ('{"a": 1}', 6, None)
+    with pytest.raises(ProviderUnavailable, match="API key not found"):   # Velona's answer to a wrong key
+        VelonaProvider(s, client=FakeHttp(_http(401, {"error": {"message": "API key not found"}}))
+                       ).complete(MSGS, True)
+    real = VelonaProvider(s)                           # real httpx client: right address and key
+    assert str(real.client.base_url).rstrip("/") == "https://velona.in/v1"
+    assert real.client.headers["Authorization"] == "Bearer vk"
+    real.client.close()
+
+
+def test_velona_needs_key(tmp_path):
+    with pytest.raises(LLMError, match="VELONA_API_KEY"):
+        VelonaProvider(settings_for(tmp_path, "velona"))
 
 
 # --------------------------------------------------------------------------- fallback

@@ -21,8 +21,8 @@ def _write_config(tmp_path: Path, mutate=None) -> Path:
 
 def test_real_config_loads():
     s = load_settings(env_file=NO_ENV, environ={})
-    assert s.llm.provider == "groq" and s.llm.model == "openai/gpt-oss-120b"
-    assert s.llm.fallback == "gemini" and s.llm.models["xai"] == "grok-4.20-0309-non-reasoning"
+    assert s.llm.provider == "velona" and s.llm.model == "x-ai/grok-4.20"
+    assert s.llm.fallback == "groq" and s.llm.models["xai"] == "grok-4.20-0309-non-reasoning"
     assert s.retrieval.top_k == 5
     assert s.data.eval_months == ("2026-09-30",)
     assert s.paths.raw.is_absolute() and s.paths.raw.name == "raw"
@@ -97,6 +97,9 @@ def test_fallback_env_override_and_checks():
     s = load_settings(env_file=NO_ENV, environ={"LLM_PROVIDER": "xai", "LLM_FALLBACK": "Groq", "XAI_API_KEY": "xk"})
     assert (s.llm.provider, s.llm.fallback, s.secrets.xai_api_key) == ("xai", "groq", "xk")
     assert "xk" not in repr(s) and "xk" not in str(s.to_dict())
+    s = load_settings(env_file=NO_ENV, environ={"VELONA_API_KEY": "vk"})
+    assert (s.llm.provider, s.secrets.velona_api_key) == ("velona", "vk")
+    assert "vk" not in repr(s) and "vk" not in str(s.to_dict())
     assert load_settings(env_file=NO_ENV, environ={"LLM_FALLBACK": "none"}).llm.fallback is None
     with pytest.raises(ConfigError, match="llm.fallback"):
         load_settings(env_file=NO_ENV, environ={"LLM_PROVIDER": "groq", "LLM_FALLBACK": "groq"})  # same as provider

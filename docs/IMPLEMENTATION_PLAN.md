@@ -225,6 +225,8 @@ Metrics: tolerance edges (just inside / just outside 1%), the 0.01-point floor f
 
 *Free-tier run 14 Nov 2026:* the first grok run (all 7 methods) was valid but had 15 replies cut at 800 output tokens; the rerun at 2000 failed because xAI rejected the key. No paid key for now, so the recorded run uses Groq `openai/gpt-oss-120b` (free tier, 8,000 tokens/minute, 1,000 requests/day, and **200,000 tokens/day**, rolling 24 h; the last limit is not in the response headers and stopped the first pass at 107/140 answers) with Gemini as the fallback (inactive until its key is added). `scheme_level` and `hierarchical` are **not run** on the free tier (their prompts are above or near 8,000 tokens). Still to do with a paid key: `python -m src.eval run --fresh` with `provider: xai` for all 7 methods, then `report`.
 
+*Velona switch 20 Nov 2026 (D8c):* the xAI key stays rejected, so paid Grok now comes through **Velona** (https://velona.in/v1), a reseller with the same OpenAI-compatible API. New provider `velona` in `src/llm.py` (the xAI code with another address and key, `VELONA_API_KEY` in `.env`); `config.yaml` now has `provider: velona`, `fallback: groq`. Model `x-ai/grok-4.20`: the same Grok 4.20 generation as the xAI pick `grok-4.20-0309-non-reasoning`, but Velona lists no "-non-reasoning" or dated name, so the exact snapshot cannot be checked; in tests it returned 0 reasoning tokens (it behaves as non-reasoning) and calls itself "Grok 4 by xAI". Velona adds about 180 prompt tokens of its own to every call (constant, so it does not change how methods compare, but token counts in the report are about 180 higher per call than on xAI). Live check: a JSON call through `LLM` answered correctly in about 3 s. Still to do: `python -m src.eval run --fresh` for all 7 methods, then `python -m src.eval report`.
+
 **Commit:** `phase 5a: gold, questions, metrics` (after stop A) and `phase 5b: full evaluation run` (after stop B, with `results/` committed).
 
 ---
@@ -263,7 +265,7 @@ From the supervisor's brief: for our ABSL dataset, name the best chunking method
 | 6.4 | Results: tables from `results/summary.md` data (read from `results.csv`, not re-parsed from markdown) + the chart | FR-6.3 |
 | 6.5 | Load indexes read-only, cached with `st.cache_resource`; never parse or index | FR-6.4 |
 | 6.6 | Results page opens with the recommendation card (Phase 5c) and a download button for `chunking_report.xlsx` | Phase 5c |
-| 6.7 | Ask and Compare use Groq until the paid grok key arrives; switching is one change in `config.yaml` | D8b |
+| 6.7 | Ask and Compare use Groq until the paid grok key arrives; switching is one change in `config.yaml` (20 Nov 2026: switched to `velona`, D8c) | D8b, D8c |
 
 UI logic is kept thin: pages call `src.rag.pipeline` and `src.baseline.pipeline`, which are already tested.
 

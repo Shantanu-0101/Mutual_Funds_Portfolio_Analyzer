@@ -9,9 +9,10 @@ Loading is strict: a missing or unknown key in config.yaml is an error, not a
 silent default, so a typo cannot quietly change an experiment.
 
 Environment (``.env`` or real environment variables; real ones win):
-  LLM_PROVIDER    overrides ``llm.provider`` (xai | groq | gemini | mock)
+  LLM_PROVIDER    overrides ``llm.provider`` (velona | xai | groq | gemini | mock)
   LLM_FALLBACK    overrides ``llm.fallback`` (a provider name, or ``none`` to switch it off)
-  XAI_API_KEY     secret, never written to repr, logs or the manifest
+  VELONA_API_KEY  secret (Velona: reseller that serves Grok), never written to repr, logs or the manifest
+  XAI_API_KEY     secret, same
   GROQ_API_KEY    secret, same
   GEMINI_API_KEY  secret, same
 """
@@ -31,8 +32,8 @@ from dotenv import dotenv_values
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = PROJECT_ROOT / "config.yaml"
 DEFAULT_ENV_FILE = PROJECT_ROOT / ".env"
-LLM_PROVIDERS = ("xai", "groq", "gemini", "mock")
-ENV_KEYS = ("LLM_PROVIDER", "LLM_FALLBACK", "XAI_API_KEY", "GROQ_API_KEY", "GEMINI_API_KEY")
+LLM_PROVIDERS = ("velona", "xai", "groq", "gemini", "mock")
+ENV_KEYS = ("LLM_PROVIDER", "LLM_FALLBACK", "VELONA_API_KEY", "XAI_API_KEY", "GROQ_API_KEY", "GEMINI_API_KEY")
 
 
 class ConfigError(ValueError):
@@ -98,6 +99,7 @@ class EvalSettings:
 
 @dataclass(frozen=True)
 class Secrets:
+    velona_api_key: str | None = field(default=None, repr=False)
     xai_api_key: str | None = field(default=None, repr=False)
     groq_api_key: str | None = field(default=None, repr=False)
     gemini_api_key: str | None = field(default=None, repr=False)
@@ -232,6 +234,7 @@ def load_settings(
         eval=_build(EvalSettings, _section(raw, "eval"), "eval"),
         config_file=config_path.resolve(),
         secrets=Secrets(
+            velona_api_key=env.get("VELONA_API_KEY") or None,
             xai_api_key=env.get("XAI_API_KEY") or None,
             groq_api_key=env.get("GROQ_API_KEY") or None,
             gemini_api_key=env.get("GEMINI_API_KEY") or None,
