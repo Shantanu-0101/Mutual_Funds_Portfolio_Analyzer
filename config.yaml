@@ -30,12 +30,15 @@ llm:
   # 14 Nov 2026: the xAI key was rejected and no paid key is available for now, so Groq (free) answers
   # and Gemini (free) is the fallback. Gemini stays inactive until GEMINI_API_KEY is in .env and
   # models.gemini is set. To go back to the paid run: provider: xai, fallback: groq.
-  provider: groq             # overridden by env LLM_PROVIDER (xai | groq | gemini | mock)
-  fallback: gemini           # overridden by env LLM_FALLBACK; null or "none" = no fallback
+  # 20 Nov 2026 (D8c): paid Grok now comes through Velona (a reseller, VELONA_API_KEY) instead of the
+  # rejected xAI key. Velona answers, Groq is the fallback; fallback rows are re-run by the eval as before.
+  provider: velona           # overridden by env LLM_PROVIDER (velona | xai | groq | gemini | mock)
+  fallback: groq             # overridden by env LLM_FALLBACK; null or "none" = no fallback
   # Model per provider (D8, decided 13 Nov 2026). Groq's live list had no Llama chat model left;
   # gpt-oss-120b is the strongest of the three chat models there (gpt-oss-20b, qwen3.8-27b).
   # Free tier on this account: 8,000 tokens/minute, 1,000 requests/day for all three.
   models:
+    velona: x-ai/grok-4.20              # Velona's live list 20 Nov 2026 (D8c): closest to the xai pick below; Velona has no "-non-reasoning" name, but it returned 0 reasoning tokens
     xai: grok-4.20-0309-non-reasoning   # from the live list 14 Nov 2026 (D8b); non-reasoning, your pick
     groq: openai/gpt-oss-120b
     gemini: null             # set (from the live model list) before switching to gemini

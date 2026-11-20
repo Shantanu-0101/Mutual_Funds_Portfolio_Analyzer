@@ -11,6 +11,11 @@ prompt (the disk cache).
 
 Providers (chosen by ``LLM_PROVIDER`` / ``llm.provider``):
 
+- ``velona``: model from ``llm.models.velona`` (Grok, e.g. ``x-ai/grok-4.20``),
+  over Velona's OpenAI-compatible REST API (https://velona.in/v1), a reseller
+  that serves the xAI models. Same code and rules as ``xai`` below; only the
+  address and the key (``VELONA_API_KEY``) differ. Added 20 Nov 2026 because the
+  xAI key was rejected.
 - ``xai``: model from ``llm.models.xai``, over xAI's OpenAI-compatible REST API
   (plain ``httpx``, already installed with the groq SDK; no new package). JSON
   mode on; ``reasoning_effort`` is not sent (xAI's reasoning models reject it).
@@ -189,19 +194,24 @@ def _retry_after(headers: Any) -> float | None:
 # --------------------------------------------------------------------------- providers
 
 class XAIProvider:
-    """xAI's chat completions endpoint (OpenAI-compatible), called with httpx."""
+    """xAI's chat completions endpoint (OpenAI-compatible), called with httpx.
+
+    Subclasses reach the same models through another OpenAI-compatible address
+    by changing ``name``, ``base_url`` and ``key_env``."""
 
     name = "xai"
     base_url = "https://api.x.ai/v1"
+    key_env = "XAI_API_KEY"
 
     def __init__(self, settings: Settings, client: Any = None):
         llm = settings.llm
-        if not llm.models.get("xai"):
-            raise LLMError("llm.models.xai is not set in config.yaml (pick one: python -m src.llm models xai)")
+        if not llm.models.get(self.name):
+            raise LLMError(f"llm.models.{self.name} is not set in config.yaml "
+                           f"(pick one: python -m src.llm models {self.name})")
         if client is None:
-            client = xai_client(settings)
+            client = http_client(settings, type(self))
         self.client = client
-        self.model = llm.models["xai"]
+        self.model = llm.models[self.name]
         self.temperature = llm.temperature
         self.max_tokens = llm.max_output_tokens
 
@@ -233,13 +243,23 @@ class XAIProvider:
                           finish_reason=choice.get("finish_reason"))
 
 
-def xai_client(settings: Settings) -> Any:
+class VelonaProvider(XAIProvider):
+    """Grok through Velona (https://velona.in), a reseller with an OpenAI-compatible API."""
+
+    name = "velona"
+    base_url = "https://velona.in/v1"
+    key_env = "VELONA_API_KEY"
+
+
+def http_client(settings: Settings, provider: type[XAIProvider] = XAIProvider) -> Any:
+    """An httpx client for an OpenAI-compatible provider, with its key from ``Settings.secrets``."""
     import httpx
 
-    if not settings.secrets.xai_api_key:
-        raise LLMError("XAI_API_KEY is not set (put it in .env)")
-    return httpx.Client(base_url=XAIProvider.base_url, timeout=settings.llm.timeout_s,
-                        headers={"Authorization": f"Bearer {settings.secrets.xai_api_key}"})
+    key = getattr(settings.secrets, provider.key_env.lower())
+    if not key:
+        raise LLMError(f"{provider.key_env} is not set (put it in .env)")
+    return httpx.Client(base_url=provider.base_url, timeout=settings.llm.timeout_s,
+                        headers={"Authorization": f"Bearer {key}"})
 
 
 def _error_text(response: Any) -> str:
@@ -362,7 +382,7 @@ class MockProvider:
                           completion_tokens=len(text.split()), finish_reason="stop")
 
 
-PROVIDERS = {"xai": XAIProvider, "groq": GroqProvider, "gemini": GeminiProvider, "mock": MockProvider}
+PROVIDERS = {"velona": VelonaProvider, "xai": XAIProvider, "groq": GroqProvider, "gemini": GeminiProvider, "mock": MockProvider}
 
 
 def make_provider(settings: Settings, name: str | None = None) -> Provider:
@@ -481,8 +501,8 @@ def _json_load(path: Path) -> Any:
 
 def list_models(settings: Settings, provider: str) -> list[str]:
     """Model ids the provider offers this account right now (one network call)."""
-    if provider == "xai":
-        with xai_client(settings) as client:
+    if provider in ("xai", "velona"):
+        with http_client(settings, PROVIDERS[provider]) as client:
             r = client.get("/models")
             if r.status_code >= 400:
                 raise classify_http_error(r.status_code, f"Error code: {r.status_code} - {_error_text(r)}")
@@ -497,12 +517,12 @@ def list_models(settings: Settings, provider: str) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """``python -m src.llm models xai|groq``: print the live model list (no key is printed)."""
+    """``python -m src.llm models velona|xai|groq``: print the live model list (no key is printed)."""
     from src.config import get_settings
 
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) != 2 or argv[0] != "models":
-        print("usage: python -m src.llm models xai|groq", file=sys.stderr)
+        print("usage: python -m src.llm models velona|xai|groq", file=sys.stderr)
         return 2
     for model in list_models(get_settings(), argv[1]):
         print(model)
