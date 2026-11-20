@@ -101,6 +101,12 @@ def test_fallback_env_override_and_checks():
     assert (s.llm.provider, s.secrets.velona_api_key) == ("velona", "vk")
     assert "vk" not in repr(s) and "vk" not in str(s.to_dict())
     assert load_settings(env_file=NO_ENV, environ={"LLM_FALLBACK": "none"}).llm.fallback is None
+    # "grok" is the friendly name for the Grok provider (velona); GROK_API_KEY wins over the older VELONA_API_KEY
+    s = load_settings(env_file=NO_ENV, environ={"LLM_PROVIDER": "Grok", "LLM_FALLBACK": "groq",
+                                                "GROK_API_KEY": "gk", "VELONA_API_KEY": "vk"})
+    assert (s.llm.provider, s.llm.fallback, s.secrets.velona_api_key) == ("velona", "groq", "gk")
+    assert s.llm.model == "x-ai/grok-4.20" and "gk" not in repr(s) and "gk" not in str(s.to_dict())
+    assert load_settings(env_file=NO_ENV, environ={"LLM_PROVIDER": "groq", "LLM_FALLBACK": "grok"}).llm.fallback == "velona"
     with pytest.raises(ConfigError, match="llm.fallback"):
         load_settings(env_file=NO_ENV, environ={"LLM_PROVIDER": "groq", "LLM_FALLBACK": "groq"})  # same as provider
     with pytest.raises(ConfigError, match="llm.fallback"):

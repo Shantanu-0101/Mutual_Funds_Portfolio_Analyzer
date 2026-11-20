@@ -250,7 +250,8 @@ class VelonaProvider(XAIProvider):
 
     name = "velona"
     base_url = "https://velona.in/v1"
-    key_env = "VELONA_API_KEY"
+    key_env = "VELONA_API_KEY"   # Secrets field; filled from GROK_API_KEY (or the older VELONA_API_KEY)
+    key_hint = "GROK_API_KEY"
 
 
 def http_client(settings: Settings, provider: type[XAIProvider] = XAIProvider) -> Any:
@@ -259,7 +260,7 @@ def http_client(settings: Settings, provider: type[XAIProvider] = XAIProvider) -
 
     key = getattr(settings.secrets, provider.key_env.lower())
     if not key:
-        raise LLMError(f"{provider.key_env} is not set (put it in .env)")
+        raise LLMError(f"{getattr(provider, 'key_hint', provider.key_env)} is not set (put it in .env)")
     return httpx.Client(base_url=provider.base_url, timeout=settings.llm.timeout_s,
                         headers={"Authorization": f"Bearer {key}"})
 
@@ -526,14 +527,14 @@ def list_models(settings: Settings, provider: str) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """``python -m src.llm models velona|xai|groq``: print the live model list (no key is printed)."""
-    from src.config import get_settings
+    """``python -m src.llm models grok|xai|groq``: print the live model list (no key is printed)."""
+    from src.config import canonical_provider, get_settings
 
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) != 2 or argv[0] != "models":
-        print("usage: python -m src.llm models velona|xai|groq", file=sys.stderr)
+        print("usage: python -m src.llm models grok|xai|groq", file=sys.stderr)
         return 2
-    for model in list_models(get_settings(), argv[1]):
+    for model in list_models(get_settings(), canonical_provider(argv[1].lower())):
         print(model)
     return 0
 

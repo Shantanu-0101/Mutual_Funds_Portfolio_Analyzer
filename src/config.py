@@ -9,9 +9,10 @@ Loading is strict: a missing or unknown key in config.yaml is an error, not a
 silent default, so a typo cannot quietly change an experiment.
 
 Environment (``.env`` or real environment variables; real ones win):
-  LLM_PROVIDER    overrides ``llm.provider`` (velona | xai | groq | gemini | mock)
+  LLM_PROVIDER    overrides ``llm.provider`` (grok | velona | xai | groq | gemini | mock)
   LLM_FALLBACK    overrides ``llm.fallback`` (a provider name, or ``none`` to switch it off)
-  VELONA_API_KEY  secret (Velona: reseller that serves Grok), never written to repr, logs or the manifest
+  GROK_API_KEY    secret for Grok, never written to repr, logs or the manifest
+  VELONA_API_KEY  older name of GROK_API_KEY (Grok is served through Velona, a reseller); still read
   XAI_API_KEY     secret, same
   GROQ_API_KEY    secret, same
   GEMINI_API_KEY  secret, same
@@ -33,7 +34,15 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = PROJECT_ROOT / "config.yaml"
 DEFAULT_ENV_FILE = PROJECT_ROOT / ".env"
 LLM_PROVIDERS = ("velona", "xai", "groq", "gemini", "mock")
-ENV_KEYS = ("LLM_PROVIDER", "LLM_FALLBACK", "VELONA_API_KEY", "XAI_API_KEY", "GROQ_API_KEY", "GEMINI_API_KEY")
+# Friendly names accepted wherever a provider is named: "grok" is the paid Grok, served through Velona.
+PROVIDER_ALIASES = {"grok": "velona"}
+ENV_KEYS = ("LLM_PROVIDER", "LLM_FALLBACK", "GROK_API_KEY", "VELONA_API_KEY", "XAI_API_KEY", "GROQ_API_KEY",
+            "GEMINI_API_KEY")
+
+
+def canonical_provider(name: Any) -> Any:
+    """``grok`` -> ``velona``; any other value unchanged (validated later)."""
+    return PROVIDER_ALIASES.get(name, name) if isinstance(name, str) else name
 
 
 class ConfigError(ValueError):
@@ -211,6 +220,8 @@ def load_settings(
         llm_raw["fallback"] = env["LLM_FALLBACK"].strip().lower()
     if str(llm_raw.get("fallback", "")).lower() in ("", "none", "null", "off"):
         llm_raw["fallback"] = None
+    llm_raw["provider"] = canonical_provider(llm_raw.get("provider"))
+    llm_raw["fallback"] = canonical_provider(llm_raw.get("fallback"))
     llm = _build(LLMSettings, llm_raw, "llm")
     if llm.provider not in LLM_PROVIDERS:
         raise ConfigError(f"llm.provider must be one of {LLM_PROVIDERS}, got {llm.provider!r}")
@@ -234,7 +245,7 @@ def load_settings(
         eval=_build(EvalSettings, _section(raw, "eval"), "eval"),
         config_file=config_path.resolve(),
         secrets=Secrets(
-            velona_api_key=env.get("VELONA_API_KEY") or None,
+            velona_api_key=env.get("GROK_API_KEY") or env.get("VELONA_API_KEY") or None,
             xai_api_key=env.get("XAI_API_KEY") or None,
             groq_api_key=env.get("GROQ_API_KEY") or None,
             gemini_api_key=env.get("GEMINI_API_KEY") or None,
