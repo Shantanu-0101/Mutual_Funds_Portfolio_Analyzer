@@ -1,43 +1,39 @@
 # Evaluation results
 
-Written by `python -m src.eval report` from `results/results.csv` (140 rows: 5 methods × 28 questions).
+Written by `python -m src.eval report` from `results/results.csv` (196 rows: 7 methods × 28 questions).
 
 |  |  |
 | --- | --- |
-| LLM | groq / `openai/gpt-oss-120b` (temperature 0) |
+| LLM | velona / `x-ai/grok-4.20` (temperature 0) |
 | Embedding | `BAAI/bge-small-en-v1.5`, top_k 5 |
-| Run | started 2026-11-14T10:35:41+05:30, 2 session(s), last finished 2026-11-14T11:57:47+05:30 |
-| Commit | `9c2f014` (uncommitted changes) |
-| Cached answers | 0 of 140 |
-
-> **Not run in this run:** `scheme_level`, `hierarchical`. They are missing from every table below, so do not compare them by absence.
-
-> **Not a complete run.** 33 row(s) still pending (rate limit, provider down, or answered by the fallback model); run `python -m src.eval run` again. The manifest does not mark the run complete.
+| Run | started 2026-11-20T09:25:20+05:30, 2 session(s), last finished 2026-11-20T10:08:08+05:30 |
+| Commit | `4f395cb` (uncommitted changes) |
+| Cached answers | 0 of 196 |
 
 ## Recommendation
 
-**Best chunking method for this data: fixed_size (provisional).**
+**Best chunking method for this data: hierarchical (final for this run).**
 
 Rule: most correct answers; a tie goes to higher gold-row recall, then to fewer tokens per question. The pandas baseline is compared but not ranked. Full detail: [`chunking_report.xlsx`](chunking_report.xlsx).
 
-- Most correct answers: 52% (12/23), 1 more than the runner-up section_aware (48%, 11/23).
-- Highest accuracy (alone or tied) on: lookup (100%), aggregation (29%), cross_scheme (75%).
-- Weakest on debt: 0% (0/5). 5 of its 5 wrong answers are labelled retrieval miss: not every row the answer needs reached the LLM (mean gold-row recall 4%). No chunker answered any of these correctly.
-- Weakest on aggregation: 29% (2/7). 5 of its 5 wrong answers are labelled retrieval miss: not every row the answer needs reached the LLM (mean gold-row recall 46%).
-- Cost: 1,972 tokens per question; the cheapest ranked chunker is row_wise (1,143).
+- Tied with scheme_level on correct answers (17/28); wins because more of the rows each answer needs reach the LLM (gold-row recall 96% vs 92%).
+- Highest accuracy (alone or tied) on: lookup (100%), aggregation (43%), debt (20%), unanswerable (100%).
+- Weakest on debt: 20% (1/5). 3 of its 4 wrong answers are labelled generation error: the rows were there but the LLM still answered wrong.
+- Weakest on cross_scheme: 40% (2/5). 2 of its 3 wrong answers are labelled retrieval miss: not every row the answer needs reached the LLM (mean gold-row recall 80%). scheme_level does better here (60%).
+- Cost: 7,576 tokens per question; the cheapest ranked chunker is row_wise (1,166).
+- Refusals: says the data does not contain the answer on 4 of 4 unanswerable questions, and wrongly refuses 2 of 24 answerable ones.
 
-> Not run, so not ranked: scheme_level, hierarchical.  
-> 5 question(s) left out (Q24, Q25, Q26, Q27, Q28) because the answers of section_aware are still pending (rate limit or provider down). Every ranked chunker is compared on the same 23 questions.  
-> The lead is small (1 correct answer(s) out of 23); with this few questions it could be noise.  
+> The lead is small (0 correct answer(s) out of 28); with this few questions it could be noise.  
 
 | Question type | Questions | Best method | Accuracy | Decided by |
 | --- | --- | --- | --- | --- |
 | lookup | 7 | **row_wise** | 100% | fewer tokens (tied on accuracy and recall) |
-| aggregation | 7 | **header_window** | 29% | gold-row recall (tied on accuracy) |
-| debt | 5 | none | – | no chunker answered any correctly |
-| cross_scheme | 4 | **fixed_size** | 75% | gold-row recall (tied on accuracy) |
+| aggregation | 7 | **hierarchical** | 43% | fewer tokens (tied on accuracy and recall) |
+| debt | 5 | **hierarchical** | 20% | accuracy |
+| cross_scheme | 5 | **scheme_level** | 60% | gold-row recall (tied on accuracy) |
+| unanswerable | 4 | **row_wise** | 100% | fewer tokens (tied on accuracy and recall) |
 
-The pandas baseline (no chunking; compared, not ranked) has no answers yet: 28 of 28 rows are pending. Run the evaluation again.
+The pandas baseline (no chunking; compared, not ranked) gets 100% (28/28) where hierarchical gets 61% (17/28) on the same questions. On aggregation: baseline 7/7, hierarchical 3/7.
 
 ## 1. Accuracy by method and question type
 
@@ -47,9 +43,11 @@ Correct answers / questions. Unanswerable questions count as correct when the me
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | **fixed_size** | 100% (7/7) | 29% (2/7) | 0% (0/5) | 60% (3/5) | 100% (4/4) | **57% (16/28)** |
 | **row_wise** | 100% (7/7) | 0% (0/7) | 0% (0/5) | 40% (2/5) | 100% (4/4) | **46% (13/28)** |
-| **header_window** | 86% (6/7) | 29% (2/7) | 0% (0/5) | 40% (2/5) | 100% (4/4) | **50% (14/28)** |
-| **section_aware** | 86% (6/7) | 29% (2/7) | 0% (0/5) | 60% (3/5) | 0% (0/4) | **39% (11/28)** |
-| **baseline** | 0% (0/7) | 0% (0/7) | 0% (0/5) | 0% (0/5) | 0% (0/4) | **0% (0/28)** |
+| **header_window** | 86% (6/7) | 14% (1/7) | 0% (0/5) | 0% (0/5) | 100% (4/4) | **39% (11/28)** |
+| **scheme_level** | 100% (7/7) | 43% (3/7) | 0% (0/5) | 60% (3/5) | 100% (4/4) | **61% (17/28)** |
+| **section_aware** | 86% (6/7) | 14% (1/7) | 0% (0/5) | 0% (0/5) | 100% (4/4) | **39% (11/28)** |
+| **hierarchical** | 100% (7/7) | 43% (3/7) | 20% (1/5) | 40% (2/5) | 100% (4/4) | **61% (17/28)** |
+| **baseline** | 100% (7/7) | 100% (7/7) | 100% (5/5) | 100% (5/5) | 100% (4/4) | **100% (28/28)** |
 
 ![Accuracy by method](accuracy_by_method.png)
 
@@ -59,11 +57,13 @@ Answerable questions only. *Hit*: at least one gold row was in the context. *Rec
 
 | Method | Hit | Gold-row recall | Chunks | Holding rows | Context tokens | Prompt tokens | Accuracy (answerable) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| **fixed_size** | 83% (20/24) | 58% | 5.0 | 31 | 1,266 | 1,747 | 50% (12/24) |
-| **row_wise** | 96% (23/24) | 51% | 5.0 | 5 | 522 | 952 | 38% (9/24) |
-| **header_window** | 88% (21/24) | 65% | 5.0 | 49 | 2,021 | 2,525 | 42% (10/24) |
-| **section_aware** | 88% (21/24) | 60% | 5.0 | 40 | 1,654 | 1,833 | 46% (11/24) |
-| **baseline** | – | – | – | – | – | 0 | 0% (0/24) |
+| **fixed_size** | 83% (20/24) | 58% | 5.0 | 31 | 1,266 | 1,838 | 50% (12/24) |
+| **row_wise** | 96% (23/24) | 51% | 5.0 | 5 | 521 | 1,048 | 38% (9/24) |
+| **header_window** | 88% (21/24) | 65% | 5.0 | 49 | 2,021 | 2,609 | 29% (7/24) |
+| **scheme_level** | 92% (22/24) | 92% | 5.0 | 374 | 13,166 | 14,063 | 54% (13/24) |
+| **section_aware** | 88% (21/24) | 60% | 5.0 | 40 | 1,654 | 2,232 | 29% (7/24) |
+| **hierarchical** | 100% (24/24) | 96% | 2.8 | 190 | 6,435 | 7,119 | 54% (13/24) |
+| **baseline** | – | – | – | – | – | 3,638 | 100% (24/24) |
 
 The baseline has no retrieval: its prompt is the table schema, and the code reads the whole table.
 
@@ -73,21 +73,25 @@ Means per question. Latency of a cached answer is that of its original call.
 
 | Method | Prompt tok | Completion tok | Total tok (all questions) | Retrieval ms | Generation ms | Code run ms | Total ms |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| **fixed_size** | 1,747 | 198 | 54,472 | 24 | 1,783 | – | 1,807 |
-| **row_wise** | 952 | 160 | 31,130 | 11 | 1,150 | – | 1,161 |
-| **header_window** | 2,525 | 362 | 80,840 | 11 | 1,746 | – | 1,757 |
-| **section_aware** | 1,833 | 354 | 61,239 | 16 | 1,736 | – | 1,752 |
-| **baseline** | 0 | 0 | 0 | – | 0 | 0 | 0 |
+| **fixed_size** | 1,838 | 127 | 55,017 | 19 | 1,973 | – | 1,993 |
+| **row_wise** | 1,048 | 118 | 32,643 | 25 | 1,917 | – | 1,942 |
+| **header_window** | 2,609 | 288 | 81,115 | 13 | 2,788 | – | 2,801 |
+| **scheme_level** | 14,063 | 440 | 406,087 | 11 | 3,805 | – | 3,816 |
+| **section_aware** | 2,232 | 236 | 69,121 | 9 | 2,774 | – | 2,783 |
+| **hierarchical** | 7,119 | 457 | 212,122 | 8 | 4,156 | – | 4,164 |
+| **baseline** | 3,638 | 84 | 104,228 | – | 2,196 | 89 | 2,286 |
 
 ## 4. Refusals
 
 | Method | Unanswerable: correctly refused | Answerable: refused anyway (false refusal) |
 | --- | ---: | ---: |
 | **fixed_size** | 100% (4/4) | 29% (7/24) |
-| **row_wise** | 100% (4/4) | 12% (3/24) |
-| **header_window** | 100% (4/4) | 25% (6/24) |
-| **section_aware** | 0% (0/4) | 21% (5/24) |
-| **baseline** | 0% (0/4) | 0% (0/24) |
+| **row_wise** | 100% (4/4) | 25% (6/24) |
+| **header_window** | 100% (4/4) | 33% (8/24) |
+| **scheme_level** | 100% (4/4) | 8% (2/24) |
+| **section_aware** | 100% (4/4) | 25% (6/24) |
+| **hierarchical** | 100% (4/4) | 8% (2/24) |
+| **baseline** | 100% (4/4) | 0% (0/24) |
 
 ## 5. Status and failure kinds
 
@@ -97,9 +101,11 @@ Rows whose status is not `ok`, and the label of every wrong answer.
 | --- | --- | --- |
 | **fixed_size** | all ok | retrieval miss 12 |
 | **row_wise** | all ok | retrieval miss 15 |
-| **header_window** | format_error 1 | retrieval miss 11, generation error 2, format error 1 |
-| **section_aware** | rate_limited 5, format_error 2 | retrieval miss 9, generation error 6, format error 2 |
-| **baseline** | rate_limited 28 | generation error 28 |
+| **header_window** | format_error 1 | retrieval miss 13, generation error 3, format error 1 |
+| **scheme_level** | format_error 2 | generation error 7, format error 2, retrieval miss 2 |
+| **section_aware** | format_error 1 | retrieval miss 14, generation error 2, format error 1 |
+| **hierarchical** | format_error 2 | generation error 7, format error 2, retrieval miss 2 |
+| **baseline** | all ok | none |
 
 ## 6. Failure examples
 
@@ -110,72 +116,91 @@ Up to three wrong answers per method, different kinds first. *retrieval miss*: n
 - **Q08** (aggregation) · *retrieval miss*, gold-row recall 57%  
   Q: What is the total % of AUM in equity holdings of the Banks industry for Aditya Birla Sun Life Flexi Cap Fund as on 30 Sep 2026?  
   Gold: 19.239918634537645 pct  
-  Given: value 15.15 pct ("The banks sector accounts for 15.15% of AUM in equity holdings of the Aditya Bi…")
+  Given: value 11.15 pct ("11.15")
 - **Q09** (aggregation) · *retrieval miss*, gold-row recall 26%  
   Q: What is the total % of AUM in equity holdings of the IT - Software industry for Aditya Birla Sun Life Digital India Fund as on 30 Sep 2026?  
   Gold: 57.005349052224894 pct  
-  Given: value 30.08 pct ("The IT‑Software equity holdings represent 30.08% of the AUM.")
+  Given: value 30.08 pct ("The total % of AUM in equity holdings of the IT - Software industry for Aditya …")
 - **Q12** (aggregation) · *retrieval miss*, gold-row recall 10%  
   Q: How many holdings are listed in the Equity & Equity Related section of Aditya Birla Sun Life Large Cap Fund as on 30 Sep 2026?  
   Gold: 71 count  
-  Given: value 6 count ("There are 6 holdings listed in the Equity & Equity Related section of the Adity…")
+  Given: "The provided context only shows the first 7 holdings for ADITYA BIRLA SUN LIFE LARGE CAP FUND before it is truncated at "Bhart". The total …"
 
 ### row_wise
 
 - **Q08** (aggregation) · *retrieval miss*, gold-row recall 43%  
   Q: What is the total % of AUM in equity holdings of the Banks industry for Aditya Birla Sun Life Flexi Cap Fund as on 30 Sep 2026?  
   Gold: 19.239918634537645 pct  
-  Given: value 8.68 pct ("The total percentage of AUM in equity holdings for the Banks industry is 8.68%.")
+  Given: value 8.68 pct ("The total % of AUM in equity holdings of the Banks industry is 8.68.")
 - **Q09** (aggregation) · *retrieval miss*, gold-row recall 26%  
   Q: What is the total % of AUM in equity holdings of the IT - Software industry for Aditya Birla Sun Life Digital India Fund as on 30 Sep 2026?  
   Gold: 57.005349052224894 pct  
-  Given: value 20.16 pct ("The total percentage of AUM in equity holdings for the IT - Software industry i…")
+  Given: value 20.16 pct ("The total % of AUM in equity holdings of the IT - Software industry for Aditya …")
 - **Q10** (aggregation) · *retrieval miss*, gold-row recall 20%  
   Q: What share of AUM do the top 5 equity holdings (by % of AUM) of Aditya Birla Sun Life Large Cap Fund make up together, as on 30 Sep 2026?  
   Gold: 27.41107504658948 pct  
-  Given: "Insufficient data to determine the combined % of the top 5 equity holdings as only three equity holdings are provided in the context."
+  Given: "The context only provides 3 equity holdings for Aditya Birla Sun Life Large Cap Fund (Aditya Birla Capital Ltd. at 0.89%, National Stock Ex…"
 
 ### header_window
 
 - **Q02** (lookup) · *retrieval miss*, gold-row recall 0%  
   Q: What % of AUM does Aditya Birla Sun Life Large Cap Fund hold in Infosys Ltd. as on 30 Sep 2026?  
   Gold: 3.20302290932626 pct  
-  Given: "Insufficient context to determine the % of AUM for Infosys Ltd. in ADITYA BIRLA SUN LIFE LARGE CAP FUND as on 30 Sep 2026."
-- **Q13** (aggregation) · *generation error*, gold-row recall 100%  
-  Q: How many holdings are listed in the Equity & Equity Related section of Aditya Birla Sun Life Focused Fund as on 30 Sep 2026?  
-  Gold: 29 count  
-  Given: value 20 count ("There are 20 holdings listed in the Equity & Equity Related section of the Adit…")
-- **Q14** (aggregation) · *format error*, gold-row recall 61%  
+  Given: "The context does not contain any holding in Infosys Ltd. for Aditya Birla Sun Life Large Cap Fund."
+- **Q09** (aggregation) · *generation error*, gold-row recall 100%  
+  Q: What is the total % of AUM in equity holdings of the IT - Software industry for Aditya Birla Sun Life Digital India Fund as on 30 Sep 2026?  
+  Gold: 57.005349052224894 pct  
+  Given: value 55.13 pct ("The total % of AUM in equity holdings of the IT - Software industry for Aditya …")
+- **Q16** (debt) · *format error*, gold-row recall 95%  
+  Q: What is the total % of AUM in Government Securities (the Government Securities sub-section of Debt Instruments) for Aditya Birla Sun Life Medium to Long Term Fund as on 30 Sep 2026?  
+  Gold: 59.68727676688986 pct  
+  Given: status `format_error`: not valid JSON: Unterminated string starting at: line 1 column 6852 (char 6851) (reply cut at max_output_tokens)
+
+### scheme_level
+
+- **Q08** (aggregation) · *generation error*, gold-row recall 100%  
+  Q: What is the total % of AUM in equity holdings of the Banks industry for Aditya Birla Sun Life Flexi Cap Fund as on 30 Sep 2026?  
+  Gold: 19.239918634537645 pct  
+  Given: value 18.23 pct ("The total % of AUM in equity holdings of the Banks industry for Aditya Birla Su…")
+- **Q14** (aggregation) · *format error*, gold-row recall 100%  
   Q: What is the total % of AUM in the Equity & Equity Related section of Aditya Birla Sun Life Aggressive Hybrid Fund as on 30 Sep 2026?  
   Gold: 76.18333853980906 pct  
-  Given: status `format_error`: missing keys: ['insufficient_context'] (reply cut at max_output_tokens)
+  Given: status `format_error`: not valid JSON: Unterminated string starting at: line 1 column 6228 (char 6227) (reply cut at max_output_tokens)
+- **Q15** (debt) · *retrieval miss*, gold-row recall 0%  
+  Q: What % of AUM of Aditya Birla Sun Life Medium to Long Term Fund is rated AAA by any agency (CRISIL, ICRA, CARE or IND; not counting securitised AAA(SO) ratings) as on 30 Sep 2026?  
+  Gold: 32.41573675914155 pct  
+  Given: "insufficient_context"
 
 ### section_aware
 
 - **Q02** (lookup) · *retrieval miss*, gold-row recall 0%  
   Q: What % of AUM does Aditya Birla Sun Life Large Cap Fund hold in Infosys Ltd. as on 30 Sep 2026?  
   Gold: 3.20302290932626 pct  
-  Given: "Insufficient context to determine the % of AUM for Infosys Ltd. in Aditya Birla Sun Life Large Cap Fund as of 30 Sep 2026."
-- **Q14** (aggregation) · *format error*, gold-row recall 63%  
+  Given: "The provided context does not contain any equity holdings for ADITYA BIRLA SUN LIFE LARGE CAP FUND (only debt and TREPS/Reverse Repo are sh…"
+- **Q09** (aggregation) · *generation error*, gold-row recall 100%  
+  Q: What is the total % of AUM in equity holdings of the IT - Software industry for Aditya Birla Sun Life Digital India Fund as on 30 Sep 2026?  
+  Gold: 57.005349052224894 pct  
+  Given: value 52.13 pct ("The total % of AUM in equity holdings of the IT - Software industry is 52.13%. …")
+- **Q16** (debt) · *format error*, gold-row recall 100%  
+  Q: What is the total % of AUM in Government Securities (the Government Securities sub-section of Debt Instruments) for Aditya Birla Sun Life Medium to Long Term Fund as on 30 Sep 2026?  
+  Gold: 59.68727676688986 pct  
+  Given: status `format_error`: not valid JSON: Unterminated string starting at: line 1 column 6866 (char 6865) (reply cut at max_output_tokens)
+
+### hierarchical
+
+- **Q08** (aggregation) · *generation error*, gold-row recall 100%  
+  Q: What is the total % of AUM in equity holdings of the Banks industry for Aditya Birla Sun Life Flexi Cap Fund as on 30 Sep 2026?  
+  Gold: 19.239918634537645 pct  
+  Given: value 18.23 pct ("The total % of AUM in equity holdings of the Banks industry is 18.23%.")
+- **Q14** (aggregation) · *format error*, gold-row recall 100%  
   Q: What is the total % of AUM in the Equity & Equity Related section of Aditya Birla Sun Life Aggressive Hybrid Fund as on 30 Sep 2026?  
   Gold: 76.18333853980906 pct  
-  Given: status `format_error`: missing keys: ['insufficient_context'] (reply cut at max_output_tokens)
-- **Q18** (debt) · *generation error*, gold-row recall 100%  
-  Q: List all holdings of Aditya Birla Sun Life Credit Risk Fund rated IND AA- as on 30 Sep 2026.  
-  Gold: ["9.10% SK Finance Ltd. (10/08/2029) **", "8.45% Adani Airport Holdings Ltd. (12/02/2029) **", "8.50% IKF Finance Ltd. (10/03/2028) **"]  
-  Given: items SK Finance Ltd.; Adani Airport Holdings Ltd.; IKF Finance Ltd.
+  Given: status `format_error`: not valid JSON: Unterminated string starting at: line 1 column 6263 (char 6262) (reply cut at max_output_tokens)
+- **Q21** (cross_scheme) · *retrieval miss*, gold-row recall 50%  
+  Q: Which holds more HDFC Bank Ltd. as a % of AUM as on 30 Sep 2026: Aditya Birla Sun Life Flexi Cap Fund or Aditya Birla Sun Life Value Fund?  
+  Gold: "PURE"  
+  Given: value 3.91 pct ("Aditya Birla Sun Life Flexi Cap Fund holds 3.91% of AUM in HDFC Bank Ltd.")
 
 ### baseline
 
-- **Q01** (lookup) · *generation error*  
-  Q: What % of AUM does Aditya Birla Sun Life Flexi Cap Fund hold in ICICI Bank Ltd. as on 30 Sep 2026?  
-  Gold: 5.59673125081035 pct  
-  Given: status `rate_limited`: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_<redac…
-- **Q02** (lookup) · *generation error*  
-  Q: What % of AUM does Aditya Birla Sun Life Large Cap Fund hold in Infosys Ltd. as on 30 Sep 2026?  
-  Gold: 3.20302290932626 pct  
-  Given: status `rate_limited`: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_<redac…
-- **Q03** (lookup) · *generation error*  
-  Q: What % of AUM does Aditya Birla Sun Life Small Cap Fund hold in TD Power Systems Ltd. as on 30 Sep 2026?  
-  Gold: 3.3895195224851395 pct  
-  Given: status `rate_limited`: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_<redac…
+No wrong answers.

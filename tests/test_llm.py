@@ -297,6 +297,19 @@ def test_no_fallback_on_overflow_or_bad_request(tmp_path):
         assert backup.calls == 0
 
 
+def test_fallback_failure_raises_main_error(tmp_path):
+    # 20 Nov 2026: Velona out of credit (402), then Groq refused large prompts (413). Those rows were
+    # saved as final context_overflow results for Grok instead of staying pending.
+    s = settings_for(tmp_path)
+    for main_err in (RateLimited("daily limit"), ProviderUnavailable("402 balance 0.03")):
+        for fb_err in (ContextOverflow("413 too large"), RateLimited("8000 TPM"), LLMError("400 bad")):
+            main, backup = Named("main", [main_err]), Named("backup", [fb_err])
+            with pytest.raises(type(main_err), match="fallback backup also failed") as info:
+                LLM(s, main, fallback=backup, cache=False).generate(MSGS)
+            assert type(info.value) is type(main_err) and str(fb_err) in str(info.value)
+            assert (main.calls, backup.calls) == (1, 1)
+
+
 def test_fallback_answer_cached_under_fallback_key(tmp_path):
     s = settings_for(tmp_path)
     backup = Named("backup", [])

@@ -32,7 +32,9 @@ Fallback (``llm.fallback``, e.g. xai -> groq): when the main provider ends in
 ``RateLimited`` or ``ProviderUnavailable``, the same messages go to the
 fallback provider, and ``LLMResult.fallback_reason`` says why. Nothing else
 falls back: a ``ContextOverflow`` would overflow the smaller model too, and a
-plain 400 is a bug to fix, not to hide. The evaluation (Phase 5) must treat a
+plain 400 is a bug to fix, not to hide. If the fallback fails as well (any
+error, e.g. a 413 the main model would not have given), the main provider's
+error is raised, so the row stays pending. The evaluation (Phase 5) must treat a
 fallback answer as a different model: it flags those rows and re-runs them,
 or runs with ``LLM_FALLBACK=none``. ``mock`` never falls back.
 
@@ -452,7 +454,14 @@ class LLM:
             except LLMError as setup:
                 raise type(e)(f"{e} (fallback {self.fallback_name} not usable: {setup})") from e
             log.warning("LLM %s failed (%s); asking fallback %s", self.provider.name, e.kind, fallback.name)
-            return replace(self._generate_with(fallback, messages, json), fallback_reason=reason)
+            try:
+                res = self._generate_with(fallback, messages, json)
+            except LLMError as fb:
+                # Report the main provider's failure (rate limit / unavailable), so the row stays pending
+                # and is retried on the main model. The fallback's own error (e.g. Groq's 413 on a large
+                # prompt) says nothing about the main model and must not be recorded as its result.
+                raise type(e)(f"{e} (fallback {fallback.name} also failed: {fb.kind}: {fb})") from fb
+            return replace(res, fallback_reason=reason)
 
     def _generate_with(self, provider: Provider, messages: list[Message], json: bool) -> LLMResult:  # noqa: A002
         key = self.cache_key(messages, json, provider)
