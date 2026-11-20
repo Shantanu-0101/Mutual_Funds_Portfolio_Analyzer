@@ -1,15 +1,15 @@
 {
- "created_at": "2026-11-14T10:35:41+05:30",
+ "created_at": "2026-11-20T09:25:20+05:30",
  "setup": {
-  "config_sha256": "11b605b4b3d9921ac220aa3970b10dbb5e13c7925486f5245d706cc6ff7292c9",
-  "llm_provider": "groq",
-  "llm_model": "openai/gpt-oss-120b",
+  "config_sha256": "9f6d8886b96dcdee13d6a97c6147f70a0124f39baf3a0af13a99dd1234124e1c",
+  "llm_provider": "velona",
+  "llm_model": "x-ai/grok-4.20",
   "questions_sha256": "b8135a25f7c4d0a0a833642f72e427907ee324147cee58cf0d2c2a4d94681ac5"
  },
  "llm": {
-  "provider": "groq",
-  "model": "openai/gpt-oss-120b",
-  "fallback": "gemini",
+  "provider": "velona",
+  "model": "x-ai/grok-4.20",
+  "fallback": "groq",
   "fallback_rows_rerun": true
  },
  "embedding_model": "BAAI/bge-small-en-v1.5",
@@ -17,7 +17,9 @@
   "fixed_size",
   "row_wise",
   "header_window",
+  "scheme_level",
   "section_aware",
+  "hierarchical",
   "baseline"
  ],
  "questions": [
@@ -80,9 +82,10 @@
    "top_k": 5
   },
   "llm": {
-   "provider": "groq",
-   "fallback": "gemini",
+   "provider": "velona",
+   "fallback": "groq",
    "models": {
+    "velona": "x-ai/grok-4.20",
     "xai": "grok-4.20-0309-non-reasoning",
     "groq": "openai/gpt-oss-120b",
     "gemini": null,
@@ -126,59 +129,28 @@
  },
  "sessions": [
   {
-   "started_at": "2026-11-14T10:35:41+05:30",
+   "started_at": "2026-11-20T09:25:20+05:30",
    "fresh": true,
-   "commit": "9c2f0148b0535b6b1d1feb97f37fc7d8f4cf6fd4",
-   "branch": "phase-5-eval",
-   "dirty": false
+   "commit": "4f395cb23be256b39bf922e8d805355f97f69b8a",
+   "branch": "llm-velona",
+   "dirty": true,
+   "finished_at": "2026-11-20T09:56:13+05:30",
+   "asked": 196,
+   "skipped": 0
   },
   {
-   "started_at": "2026-11-14T11:34:03+05:30",
+   "started_at": "2026-11-20T10:00:25+05:30",
    "fresh": false,
-   "commit": "9c2f0148b0535b6b1d1feb97f37fc7d8f4cf6fd4",
-   "branch": "phase-5-eval",
+   "commit": "4f395cb23be256b39bf922e8d805355f97f69b8a",
+   "branch": "llm-velona",
    "dirty": true,
-   "finished_at": "2026-11-14T11:57:47+05:30",
-   "asked": 128,
-   "skipped": 12
+   "finished_at": "2026-11-20T10:08:08+05:30",
+   "asked": 126,
+   "skipped": 70
   }
  ],
- "rows": 140,
- "expected_rows": 140,
- "pending": [
-  "section_aware:Q24",
-  "section_aware:Q25",
-  "section_aware:Q26",
-  "section_aware:Q27",
-  "section_aware:Q28",
-  "baseline:Q01",
-  "baseline:Q02",
-  "baseline:Q03",
-  "baseline:Q04",
-  "baseline:Q05",
-  "baseline:Q06",
-  "baseline:Q07",
-  "baseline:Q08",
-  "baseline:Q09",
-  "baseline:Q10",
-  "baseline:Q11",
-  "baseline:Q12",
-  "baseline:Q13",
-  "baseline:Q14",
-  "baseline:Q15",
-  "baseline:Q16",
-  "baseline:Q17",
-  "baseline:Q18",
-  "baseline:Q19",
-  "baseline:Q20",
-  "baseline:Q21",
-  "baseline:Q22",
-  "baseline:Q23",
-  "baseline:Q24",
-  "baseline:Q25",
-  "baseline:Q26",
-  "baseline:Q27",
-  "baseline:Q28"
- ],
- "complete": false
+ "rows": 196,
+ "expected_rows": 196,
+ "pending": [],
+ "complete": true
 }
