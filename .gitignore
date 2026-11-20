@@ -7,6 +7,9 @@ __pycache__/
 # Secrets (keys live only in .env; .env.example is committed)
 .env
 
+# Local editor / assistant settings
+.claude/
+
 # Data: raw files are public ABSL disclosures but large; README says where to download them.
 data/raw/
 data/other/

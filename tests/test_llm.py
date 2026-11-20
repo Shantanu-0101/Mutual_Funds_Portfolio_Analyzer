@@ -266,7 +266,7 @@ def test_velona_same_api_other_address(tmp_path):
 
 
 def test_velona_needs_key(tmp_path):
-    with pytest.raises(LLMError, match="VELONA_API_KEY"):
+    with pytest.raises(LLMError, match="GROK_API_KEY"):
         VelonaProvider(settings_for(tmp_path, "velona"))
 
 

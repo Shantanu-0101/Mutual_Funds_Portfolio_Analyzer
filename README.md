@@ -10,7 +10,7 @@ The main deliverable is an experiment, not the app. Six chunking strategies are 
 
 ## Findings
 
-Recorded run of 20 Nov 2026: Grok `x-ai/grok-4.20` through Velona, temperature 0. The data is Aditya Birla Sun Life (ABSL), 30 Sep 2026. Embeddings come from `BAAI/bge-small-en-v1.5` with top_k 5. That gives 7 methods × 28 questions = 196 answers, all from the same model.
+Recorded run of 20 Nov 2026: Grok `x-ai/grok-4.20`, temperature 0. The data is Aditya Birla Sun Life (ABSL), 30 Sep 2026. Embeddings come from `BAAI/bge-small-en-v1.5` with top_k 5. That gives 7 methods × 28 questions = 196 answers, all from the same model.
 
 ### Accuracy
 
@@ -52,7 +52,7 @@ Recorded run of 20 Nov 2026: Grok `x-ai/grok-4.20` through Velona, temperature 0
 - **Small question set:** 28 questions, so a 1-question gap could be noise. The top two chunkers are tied on correct answers.
 - **One fund house, one month:** only ABSL, 30 Sep 2026.
 - **Cut-off replies:** 6 answers broke the JSON format because the reply hit `max_output_tokens` (2,000). They count as wrong.
-- **Velona token overhead:** Velona adds about 180 prompt tokens to every call. This is the same for every method, so it does not change the ranking.
+- **Token overhead:** the Grok endpoint adds about 180 prompt tokens to every call. This is the same for every method, so it does not change the ranking.
 
 Full detail: the [Excel report](results/chunking_report.xlsx) has a Recommendation sheet, a Ranking, accuracy by question type, retrieval and cost, every answer, and run info. See also [`results/summary.md`](results/summary.md) and [`results/run_manifest.json`](results/run_manifest.json).
 
@@ -94,12 +94,12 @@ Copy `.env.example` to `.env` and fill it in. `.env` is git-ignored, so never co
 
 | Variable | Needed for |
 | --- | --- |
-| `VELONA_API_KEY` | The main LLM, Grok via [Velona](https://velona.in) (paid) |
-| `GROQ_API_KEY` | The fallback when Velona is rate-limited or out of credit (free tier) |
+| `GROK_API_KEY` | The main LLM, Grok (paid) |
+| `GROQ_API_KEY` | The fallback when Grok is rate-limited or out of credit (free tier) |
 | `XAI_API_KEY`, `GEMINI_API_KEY` | Optional, other providers |
 | `LLM_PROVIDER`, `LLM_FALLBACK` | Optional; they override `config.yaml` |
 
-`config.yaml` sets the provider to `velona` and the fallback to `groq`. The example file sets `LLM_PROVIDER=groq` and `LLM_FALLBACK=none`, so delete or change those two lines in your `.env` to use Grok. Any row the fallback answers is flagged and re-asked by the evaluation, so recorded results always come from the main model. `LLM_PROVIDER=mock` runs everything offline with a fixed answer.
+Grok is the main LLM and Groq the fallback, both in `config.yaml` and in the example file. Any row the fallback answers is flagged and re-asked by the evaluation, so recorded results always come from the main model. `LLM_PROVIDER=mock` runs everything offline with a fixed answer.
 
 ### 3. Data
 
@@ -150,7 +150,7 @@ The app only reads what `src.parsing` and `src.index` built.
 | `python -m src.eval gold` | Every gold answer → `results/gold_answers.md` |
 | `python -m src.eval manual-check` | A sample of questions to check by hand → `results/manual_check.md` |
 | `python -m src.eval rescore --reason "..."` | Re-score stored answers after a metric change (no LLM calls) |
-| `python -m src.llm models velona` | List the models a provider offers |
+| `python -m src.llm models grok` | List the models a provider offers |
 | `pytest` | All tests. They run offline on synthetic files; the real-file smoke test is skipped if the Sep file is missing |
 
 ---
@@ -164,7 +164,7 @@ src/chunking/          the six chunkers, sharing one chunk format and token coun
 src/index/             embeddings (bge-small, disk-cached) and the Chroma collections
 src/rag/               retrieval, prompt, answer with cited source rows
 src/baseline/          text-to-pandas: schema prompt, code guard, sandbox
-src/llm.py             one LLM interface: velona / xai / groq / gemini / mock, retries, cache, fallback
+src/llm.py             one LLM interface: grok / xai / groq / gemini / mock, retries, cache, fallback
 src/eval/              questions.yaml, gold answers, metrics, the runner, reports, the recommendation
 app/                   Streamlit app (Ask, Compare, Results)
 tests/                 pytest suite
