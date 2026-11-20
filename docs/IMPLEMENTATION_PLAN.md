@@ -291,6 +291,8 @@ Checked in the browser on Groq `openai/gpt-oss-120b` with "What % of AUM does Ad
 
 **Commit:** `phase 7: readme and design doc`. **STOP: project done.**
 
+*Done 20 Nov 2026:* 7.1 README (PRs #13, #14), 7.2 `docs/DESIGN.md`, 7.3 the check below. `results/results.csv` was restored to the runner's own format after an outside re-save had added a BOM and rounded its numbers (no answer or score changed); the report code now writes the Excel as edited by hand (title, no tie caveat, Run info without timings).
+
 ---
 
 ## The five commands (definition of done)
@@ -303,12 +305,12 @@ python -m src.eval report
 streamlit run app/streamlit_app.py
 ```
 
-Definition of done, checked at the end of Phase 7:
-- [ ] One command each to parse, index, evaluate and launch the app.
-- [ ] `pytest` passes: parser, every chunker, metrics, gold, baseline guard, LLM wrapper.
-- [ ] `results/summary.md` produced by a real, recorded run (`run_manifest.json` present).
-- [ ] `results/manual_check.md` checked by you.
-- [ ] No API keys in git (`git log -p | findstr /i "gsk_ api_key"` finds nothing); `.env.example` present.
+Definition of done, checked at the end of Phase 7 (20 Nov 2026, on `main` after PR #14):
+- [x] One command each to parse, index, evaluate and launch the app. `src.parsing` re-ran in 7 s and gave a byte-identical `holdings.parquet` (same sha256 as the run manifest); the Grok run used the indexes `src.index` built; `src.eval run` / `report` produced the recorded results; the app starts and its Results page shows the verdict.
+- [x] `pytest` passes: 293 tests (parser, every chunker, metrics, gold, baseline guard, LLM wrapper, config, app).
+- [x] `results/summary.md` produced by a real, recorded run (`run_manifest.json` present): Grok `x-ai/grok-4.20`, 196/196 rows, 0 pending.
+- [x] `results/manual_check.md` checked by you: all 10 gold answers marked OK.
+- [x] No API keys in git (whole history scanned for key patterns; the only hits are the dummy test value `from-file`); `.env.example` present.
 
 ---
 
