@@ -40,6 +40,12 @@ ENV_KEYS = ("LLM_PROVIDER", "LLM_FALLBACK", "GROK_API_KEY", "VELONA_API_KEY", "X
             "GEMINI_API_KEY")
 
 
+def llm_label(provider: Any, model: Any) -> str:
+    """How reports and the app name the LLM: ``x-ai/grok-4.20`` for Grok (the model id already says
+    Grok; the reseller behind it is an internal detail), ``groq / openai/gpt-oss-120b`` for the others."""
+    return str(model) if provider == "velona" else f"{provider} / {model}"
+
+
 def canonical_provider(name: Any) -> Any:
     """``grok`` -> ``velona``; any other value unchanged (validated later)."""
     return PROVIDER_ALIASES.get(name, name) if isinstance(name, str) else name

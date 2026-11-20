@@ -60,6 +60,8 @@ def test_tie_on_accuracy_broken_by_recall_then_tokens():
     df = frame(method_rows("row_wise", {"Q1"}, tokens=900), method_rows("fixed_size", {"Q1"}, tokens=2000))
     rec = recommend(df)
     assert rec.best == ["row_wise"] and "fewer tokens" in rec.reasons[0]
+    # a tie on correct answers is explained in the reasons, not flagged as a "lead of 0" (run of 20 Nov 2026)
+    assert not any("lead is small" in c for c in rec.caveats)
 
 
 def test_full_tie_names_joint_best():
@@ -133,3 +135,15 @@ def test_excel_has_every_sheet_and_the_verdict(tmp_path):
     assert rank["B2"].value == "row_wise" and rank["E2"].value == pytest.approx(0.8) and rank["E2"].number_format == "0%"
     assert any(r[1].value == "baseline" and r[0].value == "not ranked" for r in rank.iter_rows(min_row=2))
     assert wb["Per question"].max_row == len(df) + 1
+
+
+def test_excel_names_grok_by_model_and_lists_only_source_files(tmp_path):
+    df = all_chunkers({"row_wise": ALL, "fixed_size": {"Q1"}})
+    manifest = {"llm": {"provider": "velona", "model": "x-ai/grok-4.20"}, "created_at": "2026-11-20T09:25",
+                "sessions": [{"finished_at": "x", "commit": "abc1234"}],
+                "data_files": {"raw/a.xls": "1" * 64, "processed/holdings.parquet": "2" * 64}}
+    wb = load_workbook(write_excel(df, manifest, recommend(df), tmp_path / "r.xlsx"))
+    cells = [str(c.value) for ws in wb for r in ws.iter_rows() for c in r if c.value is not None]
+    assert "x-ai/grok-4.20" in cells and not any("velona" in c for c in cells)
+    run = {r[0]: r[1] for r in wb["Run info"].iter_rows(min_row=2, values_only=True)}
+    assert "Data file: raw/a.xls" in run and not any("processed/" in k or k in ("Started", "Commit") for k in run)

@@ -11,6 +11,7 @@ import pandas as pd
 import streamlit as st
 
 import common as c
+from src.config import llm_label
 from src.app_data import (
     accuracy_frame, by_type_frame, cost_frame, per_question_frame, ranking_frame, refusal_frame,
     retrieval_frame, status_frame, types_in,
@@ -58,8 +59,9 @@ def _load(path: str, mtime: float):        # mtime in the key: a new run is pick
 
 df, manifest = _load(str(csv), csv.stat().st_mtime)
 llm = manifest.get("llm", {})
+answered_by = llm_label(llm.get("provider"), f"`{llm.get('model')}`")
 st.caption(f"From `results/{RESULTS_FILE}`: {len(df)} rows, {df['method'].nunique()} methods × "
-           f"{df['qid'].nunique()} questions. Answered by {llm.get('provider')} / `{llm.get('model')}`; run "
+           f"{df['qid'].nunique()} questions. Answered by {answered_by}; run "
            f"started {manifest.get('created_at', '–')}, {'complete' if manifest.get('complete') else 'not complete'}.")
 
 # ---------------------------------------------------------------- recommendation (Phase 5c)

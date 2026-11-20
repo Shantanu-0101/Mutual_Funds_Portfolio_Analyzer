@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from src.config import DEFAULT_CONFIG, ConfigError, load_settings
+from src.config import DEFAULT_CONFIG, ConfigError, llm_label, load_settings
 
 NO_ENV = Path("does-not-exist.env")
 
@@ -107,6 +107,8 @@ def test_fallback_env_override_and_checks():
     assert (s.llm.provider, s.llm.fallback, s.secrets.velona_api_key) == ("velona", "groq", "gk")
     assert s.llm.model == "x-ai/grok-4.20" and "gk" not in repr(s) and "gk" not in str(s.to_dict())
     assert load_settings(env_file=NO_ENV, environ={"LLM_PROVIDER": "groq", "LLM_FALLBACK": "grok"}).llm.fallback == "velona"
+    assert llm_label("velona", "x-ai/grok-4.20") == "x-ai/grok-4.20"
+    assert llm_label("groq", "openai/gpt-oss-120b") == "groq / openai/gpt-oss-120b"
     with pytest.raises(ConfigError, match="llm.fallback"):
         load_settings(env_file=NO_ENV, environ={"LLM_PROVIDER": "groq", "LLM_FALLBACK": "groq"})  # same as provider
     with pytest.raises(ConfigError, match="llm.fallback"):
