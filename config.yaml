@@ -71,14 +71,14 @@ eval:
 retrieval_benchmark:
   candidate_k: 20              # every method ranks its top 20 children (FR-R2.2); the pipeline uses the first top_k
   methods:
-    dense: {}                                  # M1: today's search (bge-small, cosine, Chroma)
-    bm25: {k1: 1.5, b: 0.75}                   # M2: own Okapi BM25 (RD3)
-    hybrid_rrf: {depth: 50, rrf_k: 60}         # M3: dense top-depth + bm25 top-depth, Reciprocal Rank Fusion
-    dense_rerank: {depth: 50}                  # M4: dense top-depth, re-scored by the cross-encoder
-    hybrid_rerank: {depth: 50, hybrid_depth: 50}   # M5: hybrid_rrf top-depth, re-scored
-    scheme_filter: {fuzzy_threshold: 0.85, ranker: dense}   # M6: scheme names from the question, dense inside them
-    mmr: {depth: 50, lambda: 0.5}              # M7: dense top-depth, then Maximal Marginal Relevance
-    best_combo: null                           # M8: declared in R3 from dev results only, e.g. {filter: true, ranker: hybrid_rerank}
+    dense: {}   # M1: today's search (bge-small, cosine; ranked from the stored embeddings, not Chroma's approximate index - R3 notes); chosen on dev 23 Nov 2026
+    bm25: {b: 0.9, k1: 2.0}   # M2: own Okapi BM25 (RD3); chosen on dev 23 Nov 2026
+    hybrid_rrf: {depth: 20, rrf_k: 60}   # M3: dense top-depth + bm25 top-depth, Reciprocal Rank Fusion; chosen on dev 23 Nov 2026
+    dense_rerank: {depth: 20}   # M4: dense top-depth, re-scored by the cross-encoder; chosen on dev 23 Nov 2026
+    hybrid_rerank: {depth: 50, hybrid_depth: 50}   # M5: hybrid_rrf top-depth, re-scored; chosen on dev 23 Nov 2026
+    scheme_filter: {fuzzy_threshold: 0.85, ranker: "dense"}   # M6: scheme names from the question, dense inside them; chosen on dev 23 Nov 2026
+    mmr: {depth: 50, lambda: 0.7}   # M7: dense top-depth, then Maximal Marginal Relevance; chosen on dev 23 Nov 2026
+    best_combo: {filter: true, ranker: "mmr"}   # M8: declared in R3 from dev results only; chosen on dev 23 Nov 2026: filter + mmr
   grids:                       # values tried on dev in R3 (spec §5, last column)
     hybrid_rrf: {depth: [20, 50, 100]}
     dense_rerank: {depth: [20, 50]}

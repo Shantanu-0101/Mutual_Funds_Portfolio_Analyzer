@@ -91,9 +91,9 @@ def stub_scorer(pairs):
 stub_scorer.key = "stub-scorer@test"
 
 
-@pytest.fixture(scope="module")
-def world(tmp_path_factory):
-    tmp = tmp_path_factory.mktemp("retrieval")
+def world_from(tmp: Path) -> dict:
+    """The synthetic world in ``tmp``: settings, shared retrieval state, parents and a retriever.
+    Also used by tests/retrieval/test_offline.py, so Stage A runs on the same synthetic corpus."""
     s = load_settings(env_file=NO_ENV, environ={"LLM_PROVIDER": "mock"})
     s = replace(s, paths=replace(s.paths, cache=tmp / "cache", chroma=tmp / "chroma", processed=tmp / "processed"))
     children, parents = synthetic_chunks()
@@ -111,13 +111,19 @@ def world(tmp_path_factory):
     return dict(s=s, shared=shared, parents=parents, retriever=retriever, n=len(children))
 
 
-def same_up_to_ties(a, b) -> bool:
-    """Same scores in the same order, and the same children within each group of equal scores. The fake
-    bag-of-words embedder gives many rows identical scores, and Chroma may order those ties differently for
-    5 and 20 results, also at the k cut (on the real index no top-20 score is tied: checked on all 128
-    questions in R2)."""
-    sa, sb = [round(c.score, 6) for c in a], [round(c.score, 6) for c in b]
-    if sa != sb:
+@pytest.fixture(scope="module")
+def world(tmp_path_factory):
+    return world_from(tmp_path_factory.mktemp("retrieval"))
+
+
+def same_up_to_ties(a, b, tol: float = 1e-5) -> bool:
+    """Same scores in the same order (within ``tol``), and the same children within each group of equal
+    scores. The fake bag-of-words embedder gives many rows all but identical scores, and two cosine
+    computations of the same vectors — ours over the stored embeddings, Chroma's inside its index — differ
+    in the last decimals, so a near-tie can swap members, also at the k cut. On the real index no top-20
+    score is tied (checked on all 128 questions in R2)."""
+    sa, sb = [round(c.score, 5) for c in a], [round(c.score, 5) for c in b]
+    if len(a) != len(b) or any(abs(x.score - y.score) > tol for x, y in zip(a, b)):
         return False
     groups: dict[float, tuple[set, set]] = {}
     for x, y, sc in zip(a, b, sa):
@@ -353,8 +359,15 @@ def test_dense_rerank_puts_stub_favourite_first(world):
 def test_settings_validation(world):
     s = world["s"]
     bench = BenchmarkSettings.from_settings(s)
+    # M8 is declared in config.yaml since R3; an undeclared one (as config.yaml had it until then) is an
+    # error unless the caller passes the recipe itself, which is how R3's dev run tries the candidates.
+    undeclared = BenchmarkSettings({**s.retrieval_benchmark,
+                                    "methods": {**s.retrieval_benchmark["methods"], "best_combo": None}})
     with pytest.raises(ConfigError, match="not declared"):
-        bench.method_options("best_combo")
+        undeclared.method_options("best_combo")
+    assert undeclared.method_options("best_combo", {"filter": True, "ranker": "mmr"}) == \
+        {"filter": True, "ranker": "mmr"}
+    assert set(bench.method_options("best_combo")) == {"filter", "ranker"}
     with pytest.raises(ConfigError, match="unknown keys"):
         bench.method_options("mmr", {"lamda": 0.3})
     with pytest.raises(ConfigError, match="unknown retrieval method"):
