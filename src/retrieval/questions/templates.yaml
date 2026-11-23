@@ -1,0 +1,141 @@
+# Question templates for the retrieval benchmark (FR-R1.2, FR-R1.3).
+#
+# One entry per template. `picker` names the function in generate.py that chooses the slot values
+# (scheme, instrument, industry, rating, n, ...) from holdings.parquet; the gold answer is then computed
+# by the existing src/eval/gold.py function named in `gold_fn`. No gold value is ever written here.
+#
+# Slots in the phrasings:
+#   {scheme} {scheme_b}  scheme name (full "Aditya Birla Sun Life Flexi Cap Fund" or short "the Flexi Cap Fund")
+#   {Scheme}             same, first letter upper-cased (for a phrasing that starts with the scheme)
+#   {instrument} {industry} {rating} {n} {section} {subsection} {month}
+# Every phrasing names the month (FR-R1.4). Rules the gold code uses are written into the text (FR-5.3).
+
+lookup:
+  - id: lookup_pct
+    gold_fn: holding_pct
+    answer_kind: number
+    unit: pct
+    picker: pick_holding
+    phrasings:
+      - "What % of AUM does {scheme} hold in {instrument} as on {month}?"
+      - "As on {month}, what percentage of its AUM has {scheme} invested in {instrument}?"
+      - "How much of the AUM of {scheme} (in %) is in {instrument} as on {month}?"
+
+  - id: lookup_value
+    gold_fn: holding_value
+    answer_kind: number
+    unit: lakhs
+    picker: pick_holding
+    phrasings:
+      - "What is the market value, in Rs lakhs, of {instrument} held by {scheme} as on {month}?"
+      - "As on {month}, what is the market value (Rs lakhs) of the {instrument} holding in {scheme}?"
+      - "How many Rs lakhs of {instrument} does {scheme} hold by market value as on {month}?"
+
+aggregation:
+  - id: agg_industry
+    gold_fn: industry_total
+    answer_kind: number
+    unit: pct
+    picker: pick_industry
+    phrasings:
+      - "What is the total % of AUM in equity holdings of the {industry} industry for {scheme} as on {month}?"
+      - "As on {month}, what share of AUM does {scheme} hold in equity shares of the {industry} industry, all holdings added up?"
+      - "Adding up all its {industry} equity holdings, what % of AUM does {scheme} have in that industry as on {month}?"
+
+  - id: agg_top_n
+    gold_fn: top_n_share
+    answer_kind: number
+    unit: pct
+    picker: pick_top_n
+    phrasings:
+      - "What share of AUM do the top {n} equity holdings (by % of AUM) of {scheme} make up together, as on {month}?"
+      - "As on {month}, what is the combined % of AUM of the {n} largest equity holdings of {scheme}?"
+
+  - id: agg_count
+    gold_fn: holding_count
+    answer_kind: number
+    unit: count
+    picker: pick_equity_scheme
+    phrasings:
+      - "How many holdings are listed in the Equity & Equity Related section of {scheme} as on {month}?"
+      - "As on {month}, how many equity holdings (rows in the Equity & Equity Related section) does {scheme} have?"
+
+  - id: agg_section
+    gold_fn: section_total
+    answer_kind: number
+    unit: pct
+    picker: pick_hybrid_equity_section
+    phrasings:
+      - "What is the total % of AUM in the Equity & Equity Related section of {scheme} as on {month}?"
+      - "As on {month}, what % of the AUM of {scheme} sits in the Equity & Equity Related section?"
+
+debt:
+  - id: debt_rating_share
+    gold_fn: rating_share
+    answer_kind: number
+    unit: pct
+    picker: pick_rating_grade
+    phrasings:
+      - "What % of AUM of {scheme} is rated {rating} by any agency (CRISIL, ICRA, CARE or IND{so_note}) as on {month}?"
+      - "As on {month}, what share of the AUM of {scheme} carries the rating {rating} from any agency (CRISIL, ICRA, CARE or IND{so_note})?"
+
+  - id: debt_rating_list
+    gold_fn: instruments_by_rating
+    answer_kind: list
+    picker: pick_agency_rating
+    phrasings:
+      - "List all holdings of {scheme} rated {rating} as on {month}."
+      - "As on {month}, which holdings of {scheme} have the rating {rating}? List them all."
+
+  - id: debt_subsection
+    gold_fn: section_total
+    answer_kind: number
+    unit: pct
+    picker: pick_debt_subsection
+    phrasings:
+      - "What is the total % of AUM in {subsection} (the {subsection} sub-section of {section}) for {scheme} as on {month}?"
+      - "As on {month}, what % of the AUM of {scheme} is held in {subsection}, as listed under {section}?"
+
+cross_scheme:
+  - id: cross_more_pct
+    gold_fn: which_holds_more
+    answer_kind: choice
+    measure: pct
+    picker: pick_shared_holding
+    phrasings:
+      - "Which holds more {instrument} as a % of AUM as on {month}: {scheme} or {scheme_b}?"
+      - "As on {month}, does {scheme} or {scheme_b} have a bigger share of its AUM in {instrument}?"
+
+  - id: cross_more_value
+    gold_fn: which_holds_more
+    answer_kind: choice
+    measure: lakhs
+    picker: pick_shared_holding
+    phrasings:
+      - "Which holds a larger market value (Rs lakhs) of {instrument} as on {month}: {scheme} or {scheme_b}?"
+      - "As on {month}, which scheme holds more {instrument} by market value in Rs lakhs: {scheme} or {scheme_b}?"
+
+  - id: cross_overlap
+    gold_fn: overlap_count
+    answer_kind: number
+    unit: count
+    picker: pick_overlap_pair
+    phrasings:
+      - "How many equity holdings (same company in the Equity & Equity Related section) do {scheme} and {scheme_b} have in common as on {month}?"
+      - "As on {month}, how many companies appear in the Equity & Equity Related sections of both {scheme} and {scheme_b}?"
+
+unanswerable:
+  # Facts a monthly portfolio's holdings table does not hold. NAV and the benchmark are left out on
+  # purpose: they sit in the notes below the table in the raw file (DATA_NOTES §2), so "not in data"
+  # would be arguable for them.
+  - id: na_facts
+    gold_fn: not_in_data
+    answer_kind: not_in_data
+    picker: pick_any_scheme
+    phrasings:
+      - "What is the expense ratio of {scheme} as on {month}?"
+      - "Who is the fund manager of {scheme} as on {month}?"
+      - "What was the 1-year return of {scheme} as on {month}?"
+      - "What is the exit load of {scheme} as on {month}?"
+      - "What was the 3-year return of {scheme} as on {month}?"
+      - "What is the minimum SIP amount for {scheme} as on {month}?"
