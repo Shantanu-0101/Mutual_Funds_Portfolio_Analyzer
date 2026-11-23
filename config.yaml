@@ -64,3 +64,30 @@ eval:
   abs_tolerance_pct_points: 0.01
   manual_check_n: 10
   seed: 42
+
+# Retrieval-method benchmark (docs/SPEC_RETRIEVAL.md §5, §7). Validated by src/retrieval/settings.py.
+# Defaults below are the spec's starting values; Phase R3 picks the final ones on the dev set and writes
+# them here with the date (FR-R2.3).
+retrieval_benchmark:
+  candidate_k: 20              # every method ranks its top 20 children (FR-R2.2); the pipeline uses the first top_k
+  methods:
+    dense: {}                                  # M1: today's search (bge-small, cosine, Chroma)
+    bm25: {k1: 1.5, b: 0.75}                   # M2: own Okapi BM25 (RD3)
+    hybrid_rrf: {depth: 50, rrf_k: 60}         # M3: dense top-depth + bm25 top-depth, Reciprocal Rank Fusion
+    dense_rerank: {depth: 50}                  # M4: dense top-depth, re-scored by the cross-encoder
+    hybrid_rerank: {depth: 50, hybrid_depth: 50}   # M5: hybrid_rrf top-depth, re-scored
+    scheme_filter: {fuzzy_threshold: 0.85, ranker: dense}   # M6: scheme names from the question, dense inside them
+    mmr: {depth: 50, lambda: 0.5}              # M7: dense top-depth, then Maximal Marginal Relevance
+    best_combo: null                           # M8: declared in R3 from dev results only, e.g. {filter: true, ranker: hybrid_rerank}
+  grids:                       # values tried on dev in R3 (spec §5, last column)
+    hybrid_rrf: {depth: [20, 50, 100]}
+    dense_rerank: {depth: [20, 50]}
+    hybrid_rerank: {depth: [20, 50]}
+    scheme_filter: {fuzzy_threshold: [0.8, 0.85, 0.9]}
+    mmr: {lambda: [0.3, 0.5, 0.7]}
+    bm25: {k1: [1.2, 1.5, 2.0], b: [0.5, 0.75, 0.9]}
+  reranker:                    # RD4
+    model: BAAI/bge-reranker-base
+    revision: 2cfc18c9415c912f9d8155881c133215df768a70   # snapshot downloaded 23 Nov 2026 (R2), safetensors only
+    max_length: 512
+    batch_size: 16

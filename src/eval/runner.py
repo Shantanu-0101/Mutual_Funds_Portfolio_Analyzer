@@ -187,6 +187,7 @@ def setup_fingerprint(settings, questions_file: Path) -> dict:
     cfg = settings.to_dict()
     cfg.pop("config_file", None)
     cfg["paths"] = {}                           # where files live does not change answers
+    cfg.pop("retrieval_benchmark", None)        # the chunking run never reads it; the retrieval run adds its own
     return {"config_sha256": hashlib.sha256(json.dumps(cfg, sort_keys=True, default=str).encode()).hexdigest(),
             "llm_provider": settings.llm.provider, "llm_model": settings.llm.model,
             "questions_sha256": sha256_file(questions_file)}

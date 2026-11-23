@@ -25,7 +25,7 @@ from src.chunking.base import RowKey, _clean, row_key
 from src.llm import JSON_INVALID, LLM, LLMError, LLMResult
 from src.parsing.pipeline import HOLDINGS_FILE
 from src.rag.prompt import AnswerFormatError, build_messages, norm_name, parse_answer
-from src.rag.retrieve import Retrieval, Retriever
+from src.rag.retrieve import HIERARCHICAL, Retrieval, Retriever, swap_for_parents
 
 STATUSES = ("ok", "format_error", "context_overflow", "rate_limited", "provider_unavailable", "llm_error")
 
@@ -98,9 +98,28 @@ class RagPipeline:
             self._row_names = load_row_names(self.settings.paths.processed)
         return self._row_names
 
+    def retrieve(self, question: str, chunker: str, top_k: int | None = None,
+                 scheme_code: str | list[str] | None = None, as_of_date: str | None = None,
+                 method=None) -> Retrieval:
+        """Today's dense search, or a benchmark retrieval method (``src.retrieval``, ``hierarchical`` only).
+        A method's top_k children go through the same parent swap as dense's."""
+        if method is None:
+            return self.retriever.retrieve(question, chunker, top_k, scheme_code, as_of_date)
+        if chunker != HIERARCHICAL:
+            raise ValueError(f"retrieval methods are benchmarked on hierarchical only, not {chunker!r}")
+        if scheme_code or as_of_date:
+            raise ValueError("a retrieval method cannot be combined with the app's scheme / month filter")
+        top_k = top_k or self.settings.retrieval.top_k
+        res = method.retrieve(question, top_k)
+        return Retrieval(chunker, swap_for_parents(res.children, self.retriever.parents), res.latency_ms,
+                         children=res.children, method=res.method, debug=res.debug)
+
     def answer(self, question: str, chunker: str, top_k: int | None = None,
-               scheme_code: str | list[str] | None = None, as_of_date: str | None = None) -> RagResult:
-        retrieval = self.retriever.retrieve(question, chunker, top_k, scheme_code, as_of_date)
+               scheme_code: str | list[str] | None = None, as_of_date: str | None = None,
+               method=None) -> RagResult:
+        """``method=None`` (the default) is today's dense search, so the app and the chunking run are
+        unchanged; a ``src.retrieval`` method object swaps the search only."""
+        retrieval = self.retrieve(question, chunker, top_k, scheme_code, as_of_date, method)
         messages = build_messages(question, [r.chunk for r in retrieval.chunks])
         base = dict(question=question, chunker=chunker, retrieval=retrieval, model=self.llm.model,
                     provider=self.llm.provider.name)
