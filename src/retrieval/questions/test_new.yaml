@@ -1,0 +1,887 @@
+# New test questions (scored together with src/eval/questions.yaml) for the retrieval benchmark (Phase R1). WRITTEN BY CODE, do not edit by hand:
+# regenerate with `python -m src.retrieval questions` (seed 42, month 2026-09-30).
+# Gold answers are computed at run time by src/eval/gold.py from gold_fn + params, never stored here.
+# tags: template / phrasing (1-based) / short_name (scheme called by its short name) / schemes /
+#       gold_sections (parent ids of the hierarchical chunker that hold the gold rows, FR-R1.7).
+
+- id: T001
+  type: lookup
+  text: As on 30 Sep 2026, what percentage of its AUM has the Nifty Midcap 150 Index Fund invested in Bharat Dynamics Ltd.?
+  answer_kind: number
+  unit: pct
+  gold_fn: holding_pct
+  params: {scheme_code: NMID150, as_of_date: '2026-09-30', isin: INE171Z01026}
+  tags:
+    template: lookup_pct
+    phrasing: 2
+    short_name: true
+    schemes: [NMID150]
+    gold_sections: ['hierarchical:2026-09-30:NMID150:p0']
+
+- id: T002
+  type: lookup
+  text: What is the market value, in Rs lakhs, of 8.29% TATA Capital Ltd. (10/05/2027) held by Aditya Birla Sun Life CRISIL-IBX Financial Services 9-12 Months Debt Index Fund as on 30 September 2026?
+  answer_kind: number
+  unit: lakhs
+  gold_fn: holding_value
+  params: {scheme_code: CSFSD12, as_of_date: '2026-09-30', isin: INE976I07CT9}
+  tags:
+    template: lookup_value
+    phrasing: 1
+    short_name: false
+    schemes: [CSFSD12]
+    gold_sections: ['hierarchical:2026-09-30:CSFSD12:p0']
+
+- id: T003
+  type: lookup
+  text: How much of the AUM of Aditya Birla Sun Life Manufacturing Equity Fund (in %) is in Sona Blw Precision Forgings Ltd. as on 30 September 2026?
+  answer_kind: number
+  unit: pct
+  gold_fn: holding_pct
+  params: {scheme_code: BSLMFG, as_of_date: '2026-09-30', isin: INE073K01018}
+  tags:
+    template: lookup_pct
+    phrasing: 3
+    short_name: false
+    schemes: [BSLMFG]
+    gold_sections: ['hierarchical:2026-09-30:BSLMFG:p0']
+
+- id: T004
+  type: lookup
+  text: How many Rs lakhs of Adani Power Ltd. does Aditya Birla Sun Life BSE India Infrastructure Index Fund hold by market value as on 30 Sep 2026?
+  answer_kind: number
+  unit: lakhs
+  gold_fn: holding_value
+  params: {scheme_code: ABBSEIIF, as_of_date: '2026-09-30', isin: INE814H01029}
+  tags:
+    template: lookup_value
+    phrasing: 3
+    short_name: false
+    schemes: [ABBSEIIF]
+    gold_sections: ['hierarchical:2026-09-30:ABBSEIIF:p0']
+
+- id: T005
+  type: lookup
+  text: What % of AUM does the Banking & PSU Debt Fund hold in 0% GOI - (15/04/2037) STRIPS as on 30 September 2026?
+  answer_kind: number
+  unit: pct
+  gold_fn: holding_pct
+  params: {scheme_code: BSLSTF, as_of_date: '2026-09-30', isin: IN000437C045}
+  tags:
+    template: lookup_pct
+    phrasing: 1
+    short_name: true
+    schemes: [BSLSTF]
+    gold_sections: ['hierarchical:2026-09-30:BSLSTF:p1']
+
+- id: T006
+  type: lookup
+  text: How many Rs lakhs of Bharat Heavy Electricals Ltd. does Aditya Birla Sun Life Infrastructure Fund hold by market value as on 30 September 2026?
+  answer_kind: number
+  unit: lakhs
+  gold_fn: holding_value
+  params: {scheme_code: BINFRA, as_of_date: '2026-09-30', isin: INE257A01026}
+  tags:
+    template: lookup_value
+    phrasing: 3
+    short_name: false
+    schemes: [BINFRA]
+    gold_sections: ['hierarchical:2026-09-30:BINFRA:p0']
+
+- id: T007
+  type: lookup
+  text: How much of the AUM of Aditya Birla Sun Life Retirement Fund - The 40s Plan (in %) is in Torrent Pharmaceuticals Ltd. as on 30 September 2026?
+  answer_kind: number
+  unit: pct
+  gold_fn: holding_pct
+  params: {scheme_code: BSLRF40, as_of_date: '2026-09-30', isin: INE685A01028}
+  tags:
+    template: lookup_pct
+    phrasing: 3
+    short_name: false
+    schemes: [BSLRF40]
+    gold_sections: ['hierarchical:2026-09-30:BSLRF40:p0']
+
+- id: T008
+  type: lookup
+  text: What is the market value, in Rs lakhs, of 8.00% Adani Power Ltd. (27/01/2028) held by Aditya Birla Sun Life Credit Risk Fund as on 30 September 2026?
+  answer_kind: number
+  unit: lakhs
+  gold_fn: holding_value
+  params: {scheme_code: BSLCBF, as_of_date: '2026-09-30', isin: INE814H07190}
+  tags:
+    template: lookup_value
+    phrasing: 1
+    short_name: false
+    schemes: [BSLCBF]
+    gold_sections: ['hierarchical:2026-09-30:BSLCBF:p1']
+
+- id: T009
+  type: lookup
+  text: How much of the AUM of Aditya Birla Sun Life Dividend Yield Fund (in %) is in PNB Housing Finance Ltd. as on 30 Sep 2026?
+  answer_kind: number
+  unit: pct
+  gold_fn: holding_pct
+  params: {scheme_code: BDYP, as_of_date: '2026-09-30', isin: INE572E01012}
+  tags:
+    template: lookup_pct
+    phrasing: 3
+    short_name: false
+    schemes: [BDYP]
+    gold_sections: ['hierarchical:2026-09-30:BDYP:p0']
+
+- id: T010
+  type: lookup
+  text: How many Rs lakhs of State Government Securities (08/11/2027) does the Short Term Fund hold by market value as on 30 September 2026?
+  answer_kind: number
+  unit: lakhs
+  gold_fn: holding_value
+  params: {scheme_code: BBIF, as_of_date: '2026-09-30', isin: IN1520170128}
+  tags:
+    template: lookup_value
+    phrasing: 3
+    short_name: true
+    schemes: [BBIF]
+    gold_sections: ['hierarchical:2026-09-30:BBIF:p0']
+
+- id: T011
+  type: lookup
+  text: What % of AUM does Aditya Birla Sun Life Nifty Bank ETF hold in IDFC First Bank Ltd. as on 30 September 2026?
+  answer_kind: number
+  unit: pct
+  gold_fn: holding_pct
+  params: {scheme_code: BANKETF, as_of_date: '2026-09-30', isin: INE092T01019}
+  tags:
+    template: lookup_pct
+    phrasing: 1
+    short_name: false
+    schemes: [BANKETF]
+    gold_sections: ['hierarchical:2026-09-30:BANKETF:p0']
+
+- id: T012
+  type: lookup
+  text: How many Rs lakhs of Tata Motors Ltd. does Aditya Birla Sun Life Consumption Fund hold by market value as on 30 Sep 2026?
+  answer_kind: number
+  unit: lakhs
+  gold_fn: holding_value
+  params: {scheme_code: GENNEXT, as_of_date: '2026-09-30', isin: INE1TAE01010}
+  tags:
+    template: lookup_value
+    phrasing: 3
+    short_name: false
+    schemes: [GENNEXT]
+    gold_sections: ['hierarchical:2026-09-30:GENNEXT:p0']
+
+- id: T013
+  type: lookup
+  text: As on 30 September 2026, what percentage of its AUM has the Nifty 50 ETF invested in Jio Financial Services Ltd.?
+  answer_kind: number
+  unit: pct
+  gold_fn: holding_pct
+  params: {scheme_code: NIFTYETF, as_of_date: '2026-09-30', isin: INE758E01017}
+  tags:
+    template: lookup_pct
+    phrasing: 2
+    short_name: true
+    schemes: [NIFTYETF]
+    gold_sections: ['hierarchical:2026-09-30:NIFTYETF:p0']
+
+- id: T014
+  type: lookup
+  text: As on 30 Sep 2026, what is the market value (Rs lakhs) of the Government of India (20/06/2027) holding in the CRISIL IBX Gilt June 2027 Index Fund?
+  answer_kind: number
+  unit: lakhs
+  gold_fn: holding_value
+  params: {scheme_code: CIGJUN27, as_of_date: '2026-09-30', isin: IN0020220037}
+  tags:
+    template: lookup_value
+    phrasing: 2
+    short_name: true
+    schemes: [CIGJUN27]
+    gold_sections: ['hierarchical:2026-09-30:CIGJUN27:p0']
+
+- id: T015
+  type: lookup
+  text: As on 30 September 2026, what percentage of its AUM has Aditya Birla Sun Life CRISIL IBX 60:40 SDL + AAA PSU - Apr 2027 Index Fund invested in State Government Securities (01/03/2027)?
+  answer_kind: number
+  unit: pct
+  gold_fn: holding_pct
+  params: {scheme_code: CSPAPA27, as_of_date: '2026-09-30', isin: IN2920160420}
+  tags:
+    template: lookup_pct
+    phrasing: 2
+    short_name: false
+    schemes: [CSPAPA27]
+    gold_sections: ['hierarchical:2026-09-30:CSPAPA27:p0']
+
+- id: T016
+  type: aggregation
+  text: What is the total % of AUM in equity holdings of the Chemicals & Petrochemicals industry for Aditya Birla Sun Life Midcap Fund as on 30 September 2026?
+  answer_kind: number
+  unit: pct
+  gold_fn: industry_total
+  params: {scheme_code: MIDCAP, as_of_date: '2026-09-30', industry: Chemicals & Petrochemicals}
+  tags:
+    template: agg_industry
+    phrasing: 1
+    short_name: false
+    schemes: [MIDCAP]
+    gold_sections: ['hierarchical:2026-09-30:MIDCAP:p0']
+
+- id: T017
+  type: aggregation
+  text: What share of AUM do the top 3 equity holdings (by % of AUM) of Aditya Birla Sun Life Pharma & Healthcare Fund make up together, as on 30 September 2026?
+  answer_kind: number
+  unit: pct
+  gold_fn: top_n_share
+  params: {scheme_code: BSLPHF, as_of_date: '2026-09-30', n: 3}
+  tags:
+    template: agg_top_n
+    phrasing: 1
+    short_name: false
+    schemes: [BSLPHF]
+    gold_sections: ['hierarchical:2026-09-30:BSLPHF:p0']
+
+- id: T018
+  type: aggregation
+  text: How many holdings are listed in the Equity & Equity Related section of the Value Fund as on 30 Sep 2026?
+  answer_kind: number
+  unit: count
+  gold_fn: holding_count
+  params: {scheme_code: PURE, as_of_date: '2026-09-30'}
+  tags:
+    template: agg_count
+    phrasing: 1
+    short_name: true
+    schemes: [PURE]
+    gold_sections: ['hierarchical:2026-09-30:PURE:p0']
+
+- id: T019
+  type: aggregation
+  text: As on 30 September 2026, what % of the AUM of Aditya Birla Sun Life Equity Savings Fund sits in the Equity & Equity Related section?
+  answer_kind: number
+  unit: pct
+  gold_fn: section_total
+  params: {scheme_code: BSLEQSF, as_of_date: '2026-09-30', section: Equity & Equity Related}
+  tags:
+    template: agg_section
+    phrasing: 2
+    short_name: false
+    schemes: [BSLEQSF]
+    gold_sections: ['hierarchical:2026-09-30:BSLEQSF:p0']
+
+- id: T020
+  type: aggregation
+  text: As on 30 Sep 2026, what share of AUM does Aditya Birla Sun Life MNC Fund hold in equity shares of the Industrial Products industry, all holdings added up?
+  answer_kind: number
+  unit: pct
+  gold_fn: industry_total
+  params: {scheme_code: MNC, as_of_date: '2026-09-30', industry: Industrial Products}
+  tags:
+    template: agg_industry
+    phrasing: 2
+    short_name: false
+    schemes: [MNC]
+    gold_sections: ['hierarchical:2026-09-30:MNC:p0']
+
+- id: T021
+  type: aggregation
+  text: What share of AUM do the top 10 equity holdings (by % of AUM) of Aditya Birla Sun Life Business Cycle Fund make up together, as on 30 September 2026?
+  answer_kind: number
+  unit: pct
+  gold_fn: top_n_share
+  params: {scheme_code: ABSLBCF, as_of_date: '2026-09-30', n: 10}
+  tags:
+    template: agg_top_n
+    phrasing: 1
+    short_name: false
+    schemes: [ABSLBCF]
+    gold_sections: ['hierarchical:2026-09-30:ABSLBCF:p0']
+
+- id: T022
+  type: aggregation
+  text: As on 30 Sep 2026, how many equity holdings (rows in the Equity & Equity Related section) does Aditya Birla Sun Life Nifty Healthcare ETF have?
+  answer_kind: number
+  unit: count
+  gold_fn: holding_count
+  params: {scheme_code: NHLTHETF, as_of_date: '2026-09-30'}
+  tags:
+    template: agg_count
+    phrasing: 2
+    short_name: false
+    schemes: [NHLTHETF]
+    gold_sections: ['hierarchical:2026-09-30:NHLTHETF:p0']
+
+- id: T023
+  type: aggregation
+  text: As on 30 Sep 2026, what % of the AUM of Aditya Birla Sun Life Multi Asset Allocation Fund sits in the Equity & Equity Related section?
+  answer_kind: number
+  unit: pct
+  gold_fn: section_total
+  params: {scheme_code: ABSLMAAF, as_of_date: '2026-09-30', section: Equity & Equity Related}
+  tags:
+    template: agg_section
+    phrasing: 2
+    short_name: false
+    schemes: [ABSLMAAF]
+    gold_sections: ['hierarchical:2026-09-30:ABSLMAAF:p0']
+
+- id: T024
+  type: aggregation
+  text: Adding up all its Pharmaceuticals & Biotechnology equity holdings, what % of AUM does Aditya Birla Sun Life Retirement Fund - The 50s Plan have in that industry as on 30 Sep 2026?
+  answer_kind: number
+  unit: pct
+  gold_fn: industry_total
+  params: {scheme_code: BSLRF50, as_of_date: '2026-09-30', industry: Pharmaceuticals & Biotechnology}
+  tags:
+    template: agg_industry
+    phrasing: 3
+    short_name: false
+    schemes: [BSLRF50]
+    gold_sections: ['hierarchical:2026-09-30:BSLRF50:p0']
+
+- id: T025
+  type: aggregation
+  text: As on 30 Sep 2026, what is the combined % of AUM of the 5 largest equity holdings of Aditya Birla Sun Life Small Cap Fund?
+  answer_kind: number
+  unit: pct
+  gold_fn: top_n_share
+  params: {scheme_code: BSLTA1, as_of_date: '2026-09-30', n: 5}
+  tags:
+    template: agg_top_n
+    phrasing: 2
+    short_name: false
+    schemes: [BSLTA1]
+    gold_sections: ['hierarchical:2026-09-30:BSLTA1:p0']
+
+- id: T026
+  type: aggregation
+  text: As on 30 September 2026, how many equity holdings (rows in the Equity & Equity Related section) does Aditya Birla Sun Life BSE 500 Quality 50 Index Fund have?
+  answer_kind: number
+  unit: count
+  gold_fn: holding_count
+  params: {scheme_code: BQIDX50, as_of_date: '2026-09-30'}
+  tags:
+    template: agg_count
+    phrasing: 2
+    short_name: false
+    schemes: [BQIDX50]
+    gold_sections: ['hierarchical:2026-09-30:BQIDX50:p0']
+
+- id: T027
+  type: aggregation
+  text: As on 30 Sep 2026, what % of the AUM of the Retirement Fund - The 40s Plan sits in the Equity & Equity Related section?
+  answer_kind: number
+  unit: pct
+  gold_fn: section_total
+  params: {scheme_code: BSLRF40, as_of_date: '2026-09-30', section: Equity & Equity Related}
+  tags:
+    template: agg_section
+    phrasing: 2
+    short_name: true
+    schemes: [BSLRF40]
+    gold_sections: ['hierarchical:2026-09-30:BSLRF40:p0']
+
+- id: T028
+  type: aggregation
+  text: What is the total % of AUM in equity holdings of the Automobiles industry for Aditya Birla Sun Life Nifty 200 Quality 30 ETF as on 30 September 2026?
+  answer_kind: number
+  unit: pct
+  gold_fn: industry_total
+  params: {scheme_code: N30QTETF, as_of_date: '2026-09-30', industry: Automobiles}
+  tags:
+    template: agg_industry
+    phrasing: 1
+    short_name: false
+    schemes: [N30QTETF]
+    gold_sections: ['hierarchical:2026-09-30:N30QTETF:p0']
+
+- id: T029
+  type: aggregation
+  text: What share of AUM do the top 3 equity holdings (by % of AUM) of Aditya Birla Sun Life Flexi Cap Fund make up together, as on 30 Sep 2026?
+  answer_kind: number
+  unit: pct
+  gold_fn: top_n_share
+  params: {scheme_code: BSLEQTY, as_of_date: '2026-09-30', n: 3}
+  tags:
+    template: agg_top_n
+    phrasing: 1
+    short_name: false
+    schemes: [BSLEQTY]
+    gold_sections: ['hierarchical:2026-09-30:BSLEQTY:p0']
+
+- id: T030
+  type: aggregation
+  text: How many holdings are listed in the Equity & Equity Related section of Aditya Birla Sun Life ELSS Tax Saver Fund as on 30 Sep 2026?
+  answer_kind: number
+  unit: count
+  gold_fn: holding_count
+  params: {scheme_code: BSLR96, as_of_date: '2026-09-30'}
+  tags:
+    template: agg_count
+    phrasing: 1
+    short_name: false
+    schemes: [BSLR96]
+    gold_sections: ['hierarchical:2026-09-30:BSLR96:p0']
+
+- id: T031
+  type: debt
+  text: As on 30 Sep 2026, what share of the AUM of Aditya Birla Sun Life Dynamic Term Fund carries the rating A+ from any agency (CRISIL, ICRA, CARE or IND)?
+  answer_kind: number
+  unit: pct
+  gold_fn: rating_share
+  params: {scheme_code: BDB, as_of_date: '2026-09-30', rating: A+}
+  tags:
+    template: debt_rating_share
+    phrasing: 2
+    short_name: false
+    schemes: [BDB]
+    gold_sections: ['hierarchical:2026-09-30:BDB:p0']
+
+- id: T032
+  type: debt
+  text: List all holdings of Aditya Birla Sun Life Ultra Short to Short Term Fund rated CRISIL AA+ as on 30 September 2026.
+  answer_kind: list
+  gold_fn: instruments_by_rating
+  params: {scheme_code: BSLCM, as_of_date: '2026-09-30', rating: CRISIL AA+}
+  tags:
+    template: debt_rating_list
+    phrasing: 1
+    short_name: false
+    schemes: [BSLCM]
+    gold_sections: ['hierarchical:2026-09-30:BSLCM:p0']
+
+- id: T033
+  type: debt
+  text: As on 30 September 2026, what % of the AUM of Aditya Birla Sun Life Medium to Long Term Fund is held in Certificate of Deposits, as listed under Money Market Instruments?
+  answer_kind: number
+  unit: pct
+  gold_fn: section_total
+  params: {scheme_code: PLUS, as_of_date: '2026-09-30', section: Money Market Instruments, subsection: Certificate of Deposits}
+  tags:
+    template: debt_subsection
+    phrasing: 2
+    short_name: false
+    schemes: [PLUS]
+    gold_sections: ['hierarchical:2026-09-30:PLUS:p1']
+
+- id: T034
+  type: debt
+  text: What % of AUM of Aditya Birla Sun Life Liquid Fund is rated A1+ by any agency (CRISIL, ICRA, CARE or IND) as on 30 Sep 2026?
+  answer_kind: number
+  unit: pct
+  gold_fn: rating_share
+  params: {scheme_code: CASH, as_of_date: '2026-09-30', rating: A1+}
+  tags:
+    template: debt_rating_share
+    phrasing: 1
+    short_name: false
+    schemes: [CASH]
+    gold_sections: ['hierarchical:2026-09-30:CASH:p1']
+
+- id: T035
+  type: debt
+  text: List all holdings of the Medium Term Fund rated IND AA as on 30 Sep 2026.
+  answer_kind: list
+  gold_fn: instruments_by_rating
+  params: {scheme_code: BSLMTP, as_of_date: '2026-09-30', rating: IND AA}
+  tags:
+    template: debt_rating_list
+    phrasing: 1
+    short_name: true
+    schemes: [BSLMTP]
+    gold_sections: ['hierarchical:2026-09-30:BSLMTP:p1']
+
+- id: T036
+  type: debt
+  text: As on 30 September 2026, what % of the AUM of the CRISIL-IBX Financial Services 3 to 6 Months Debt Index Fund is held in Commercial Paper, as listed under Money Market Instruments?
+  answer_kind: number
+  unit: pct
+  gold_fn: section_total
+  params: {scheme_code: CSFSD6, as_of_date: '2026-09-30', section: Money Market Instruments, subsection: Commercial Paper}
+  tags:
+    template: debt_subsection
+    phrasing: 2
+    short_name: true
+    schemes: [CSFSD6]
+    gold_sections: ['hierarchical:2026-09-30:CSFSD6:p1']
+
+- id: T037
+  type: debt
+  text: What % of AUM of the Aggressive Hybrid Fund is rated AAA by any agency (CRISIL, ICRA, CARE or IND; not counting securitised AAA(SO) ratings) as on 30 September 2026?
+  answer_kind: number
+  unit: pct
+  gold_fn: rating_share
+  params: {scheme_code: BSL95F, as_of_date: '2026-09-30', rating: AAA}
+  tags:
+    template: debt_rating_share
+    phrasing: 1
+    short_name: true
+    schemes: [BSL95F]
+    gold_sections: ['hierarchical:2026-09-30:BSL95F:p1']
+
+- id: T038
+  type: debt
+  text: List all holdings of Aditya Birla Sun Life Dynamic Term Fund rated CRISIL AA+ as on 30 September 2026.
+  answer_kind: list
+  gold_fn: instruments_by_rating
+  params: {scheme_code: BDB, as_of_date: '2026-09-30', rating: CRISIL AA+}
+  tags:
+    template: debt_rating_list
+    phrasing: 1
+    short_name: false
+    schemes: [BDB]
+    gold_sections: ['hierarchical:2026-09-30:BDB:p0']
+
+- id: T039
+  type: debt
+  text: As on 30 Sep 2026, what % of the AUM of Aditya Birla Sun Life Large Cap Fund is held in Government Securities, as listed under Debt Instruments?
+  answer_kind: number
+  unit: pct
+  gold_fn: section_total
+  params: {scheme_code: BSLFEF, as_of_date: '2026-09-30', section: Debt Instruments, subsection: Government Securities}
+  tags:
+    template: debt_subsection
+    phrasing: 2
+    short_name: false
+    schemes: [BSLFEF]
+    gold_sections: ['hierarchical:2026-09-30:BSLFEF:p1']
+
+- id: T040
+  type: debt
+  text: As on 30 Sep 2026, what share of the AUM of the CRISIL-IBX Financial Services 9-12 Months Debt Index Fund carries the rating AAA from any agency (CRISIL, ICRA, CARE or IND; not counting securitised AAA(SO) ratings)?
+  answer_kind: number
+  unit: pct
+  gold_fn: rating_share
+  params: {scheme_code: CSFSD12, as_of_date: '2026-09-30', rating: AAA}
+  tags:
+    template: debt_rating_share
+    phrasing: 2
+    short_name: true
+    schemes: [CSFSD12]
+    gold_sections: ['hierarchical:2026-09-30:CSFSD12:p0']
+
+- id: T041
+  type: debt
+  text: List all holdings of Aditya Birla Sun Life Banking & PSU Debt Fund rated IND AAA(SO) as on 30 Sep 2026.
+  answer_kind: list
+  gold_fn: instruments_by_rating
+  params: {scheme_code: BSLSTF, as_of_date: '2026-09-30', rating: IND AAA(SO)}
+  tags:
+    template: debt_rating_list
+    phrasing: 1
+    short_name: false
+    schemes: [BSLSTF]
+    gold_sections: ['hierarchical:2026-09-30:BSLSTF:p0']
+
+- id: T042
+  type: cross_scheme
+  text: 'Which holds more ABB India Ltd. as a % of AUM as on 30 Sep 2026: Aditya Birla Sun Life Nifty 200 Momentum 30 ETF or Aditya Birla Sun Life Large & Mid Cap Fund?'
+  answer_kind: choice
+  options:
+    N30MTETF: [Nifty 200 Momentum 30 ETF]
+    ADVG: [Large & Mid Cap Fund]
+  gold_fn: which_holds_more
+  params:
+    schemes: [N30MTETF, ADVG]
+    as_of_date: '2026-09-30'
+    isin: INE117A01022
+    measure: pct
+  tags:
+    template: cross_more_pct
+    phrasing: 1
+    short_name: false
+    schemes: [N30MTETF, ADVG]
+    gold_sections: ['hierarchical:2026-09-30:ADVG:p0', 'hierarchical:2026-09-30:N30MTETF:p0']
+
+- id: T043
+  type: cross_scheme
+  text: 'Which holds a larger market value (Rs lakhs) of AU Small Finance Bank Ltd. as on 30 September 2026: the MSCI India ETF or the Banking and Financial Services Fund?'
+  answer_kind: choice
+  options:
+    MSCIETF: [MSCI India ETF]
+    BSLBKFS: [Banking and Financial Services Fund]
+  gold_fn: which_holds_more
+  params:
+    schemes: [MSCIETF, BSLBKFS]
+    as_of_date: '2026-09-30'
+    isin: INE949L01017
+    measure: lakhs
+  tags:
+    template: cross_more_value
+    phrasing: 1
+    short_name: true
+    schemes: [MSCIETF, BSLBKFS]
+    gold_sections: ['hierarchical:2026-09-30:BSLBKFS:p0', 'hierarchical:2026-09-30:MSCIETF:p0']
+
+- id: T044
+  type: cross_scheme
+  text: As on 30 September 2026, how many companies appear in the Equity & Equity Related sections of both Aditya Birla Sun Life Digital India Fund and Aditya Birla Sun Life Transportation and Logistics Fund?
+  answer_kind: number
+  unit: count
+  gold_fn: overlap_count
+  params:
+    schemes: [BSLNMF, ABSLTNLF]
+    as_of_date: '2026-09-30'
+  tags:
+    template: cross_overlap
+    phrasing: 2
+    short_name: false
+    schemes: [BSLNMF, ABSLTNLF]
+    gold_sections: ['hierarchical:2026-09-30:ABSLTNLF:p0', 'hierarchical:2026-09-30:BSLNMF:p0']
+
+- id: T045
+  type: cross_scheme
+  text: As on 30 September 2026, does the Focused Fund or the Nifty 50 Index Fund have a bigger share of its AUM in Sun Pharmaceutical Industries Ltd.?
+  answer_kind: choice
+  options:
+    BTOP100: [Focused Fund]
+    NIFTY: [Nifty 50 Index Fund]
+  gold_fn: which_holds_more
+  params:
+    schemes: [BTOP100, NIFTY]
+    as_of_date: '2026-09-30'
+    isin: INE044A01036
+    measure: pct
+  tags:
+    template: cross_more_pct
+    phrasing: 2
+    short_name: true
+    schemes: [BTOP100, NIFTY]
+    gold_sections: ['hierarchical:2026-09-30:BTOP100:p0', 'hierarchical:2026-09-30:NIFTY:p0']
+
+- id: T046
+  type: cross_scheme
+  text: 'As on 30 September 2026, which scheme holds more 91 DAY T-BILL 08.10.26 by market value in Rs lakhs: the Overnight Fund or the Gilt Fund?'
+  answer_kind: choice
+  options:
+    BSLONF: [Overnight Fund]
+    INV: [Gilt Fund]
+  gold_fn: which_holds_more
+  params:
+    schemes: [BSLONF, INV]
+    as_of_date: '2026-09-30'
+    isin: IN002026X149
+    measure: lakhs
+  tags:
+    template: cross_more_value
+    phrasing: 2
+    short_name: true
+    schemes: [BSLONF, INV]
+    gold_sections: ['hierarchical:2026-09-30:BSLONF:p0', 'hierarchical:2026-09-30:INV:p1']
+
+- id: T047
+  type: cross_scheme
+  text: How many equity holdings (same company in the Equity & Equity Related section) do Aditya Birla Sun Life Nifty PSE ETF and Aditya Birla Sun Life Nifty India Defence Index Fund have in common as on 30 Sep 2026?
+  answer_kind: number
+  unit: count
+  gold_fn: overlap_count
+  params:
+    schemes: [NPSEETF, NINDDEF]
+    as_of_date: '2026-09-30'
+  tags:
+    template: cross_overlap
+    phrasing: 1
+    short_name: false
+    schemes: [NPSEETF, NINDDEF]
+    gold_sections: ['hierarchical:2026-09-30:NINDDEF:p0', 'hierarchical:2026-09-30:NPSEETF:p0']
+
+- id: T048
+  type: cross_scheme
+  text: As on 30 Sep 2026, does the Nifty SDL Sep 2027 Index Fund or the CRISIL IBX Gilt Apr 2028 Index Fund have a bigger share of its AUM in Government of India (21/09/2027)?
+  answer_kind: choice
+  options:
+    NSDSEP27: [Nifty SDL Sep 2027 Index Fund]
+    CIGAPR28: [CRISIL IBX Gilt Apr 2028 Index Fund]
+  gold_fn: which_holds_more
+  params:
+    schemes: [NSDSEP27, CIGAPR28]
+    as_of_date: '2026-09-30'
+    isin: IN0020070069
+    measure: pct
+  tags:
+    template: cross_more_pct
+    phrasing: 2
+    short_name: true
+    schemes: [NSDSEP27, CIGAPR28]
+    gold_sections: ['hierarchical:2026-09-30:CIGAPR28:p0', 'hierarchical:2026-09-30:NSDSEP27:p0']
+
+- id: T049
+  type: cross_scheme
+  text: 'As on 30 Sep 2026, which scheme holds more Oracle Financial Services Software Ltd. by market value in Rs lakhs: the Nifty IT ETF or the Nifty Midcap 150 Index Fund?'
+  answer_kind: choice
+  options:
+    NITETF: [Nifty IT ETF]
+    NMID150: [Nifty Midcap 150 Index Fund]
+  gold_fn: which_holds_more
+  params:
+    schemes: [NITETF, NMID150]
+    as_of_date: '2026-09-30'
+    isin: INE881D01027
+    measure: lakhs
+  tags:
+    template: cross_more_value
+    phrasing: 2
+    short_name: true
+    schemes: [NITETF, NMID150]
+    gold_sections: ['hierarchical:2026-09-30:NITETF:p0', 'hierarchical:2026-09-30:NMID150:p0']
+
+- id: T050
+  type: cross_scheme
+  text: As on 30 Sep 2026, how many companies appear in the Equity & Equity Related sections of both Aditya Birla Sun Life Large Cap Fund and Aditya Birla Sun Life Nifty 200 Quality 30 ETF?
+  answer_kind: number
+  unit: count
+  gold_fn: overlap_count
+  params:
+    schemes: [BSLFEF, N30QTETF]
+    as_of_date: '2026-09-30'
+  tags:
+    template: cross_overlap
+    phrasing: 2
+    short_name: false
+    schemes: [BSLFEF, N30QTETF]
+    gold_sections: ['hierarchical:2026-09-30:BSLFEF:p0', 'hierarchical:2026-09-30:N30QTETF:p0']
+
+- id: T051
+  type: cross_scheme
+  text: As on 30 September 2026, does the Nifty SDL Apr 2027 Index Fund or the CRISIL IBX 60:40 SDL + AAA PSU - Apr 2027 Index Fund have a bigger share of its AUM in State Government Securities (11/01/2027)?
+  answer_kind: choice
+  options:
+    NSDAPR27: [Nifty SDL Apr 2027 Index Fund]
+    CSPAPA27: ['CRISIL IBX 60:40 SDL + AAA PSU - Apr 2027 Index Fund']
+  gold_fn: which_holds_more
+  params:
+    schemes: [NSDAPR27, CSPAPA27]
+    as_of_date: '2026-09-30'
+    isin: IN1520160178
+    measure: pct
+  tags:
+    template: cross_more_pct
+    phrasing: 2
+    short_name: true
+    schemes: [NSDAPR27, CSPAPA27]
+    gold_sections: ['hierarchical:2026-09-30:CSPAPA27:p0', 'hierarchical:2026-09-30:NSDAPR27:p0']
+
+- id: T052
+  type: cross_scheme
+  text: 'Which holds a larger market value (Rs lakhs) of Government of India (06/02/2033) as on 30 Sep 2026: the CRISIL IBX Gilt Apr 2033 Index Fund or the Retirement Fund - The 50s Plan?'
+  answer_kind: choice
+  options:
+    CIGAPR33: [CRISIL IBX Gilt Apr 2033 Index Fund]
+    BSLRF50: [Retirement Fund - The 50s Plan]
+  gold_fn: which_holds_more
+  params:
+    schemes: [CIGAPR33, BSLRF50]
+    as_of_date: '2026-09-30'
+    isin: IN0020220151
+    measure: lakhs
+  tags:
+    template: cross_more_value
+    phrasing: 1
+    short_name: true
+    schemes: [CIGAPR33, BSLRF50]
+    gold_sections: ['hierarchical:2026-09-30:BSLRF50:p1', 'hierarchical:2026-09-30:CIGAPR33:p0']
+
+- id: T053
+  type: unanswerable
+  text: What was the 1-year return of Aditya Birla Sun Life Multi Asset Passive FOF as on 30 Sep 2026?
+  answer_kind: not_in_data
+  gold_fn: not_in_data
+  params: {}
+  tags:
+    template: na_facts
+    phrasing: 3
+    short_name: false
+    schemes: [BSLMIFOF]
+    gold_sections: []
+
+- id: T054
+  type: unanswerable
+  text: What is the minimum SIP amount for Aditya Birla Sun Life CRISIL IBX SDL Jun 2032 Index Fund as on 30 Sep 2026?
+  answer_kind: not_in_data
+  gold_fn: not_in_data
+  params: {}
+  tags:
+    template: na_facts
+    phrasing: 6
+    short_name: false
+    schemes: [CISJUN32]
+    gold_sections: []
+
+- id: T055
+  type: unanswerable
+  text: What is the exit load of the Global Excellence Equity Fund of Fund as on 30 Sep 2026?
+  answer_kind: not_in_data
+  gold_fn: not_in_data
+  params: {}
+  tags:
+    template: na_facts
+    phrasing: 4
+    short_name: true
+    schemes: [BSLGRE]
+    gold_sections: []
+
+- id: T056
+  type: unanswerable
+  text: Who is the fund manager of Aditya Birla Sun Life Aggressive Hybrid Omni FOF as on 30 Sep 2026?
+  answer_kind: not_in_data
+  gold_fn: not_in_data
+  params: {}
+  tags:
+    template: na_facts
+    phrasing: 2
+    short_name: false
+    schemes: [BSLFPPP]
+    gold_sections: []
+
+- id: T057
+  type: unanswerable
+  text: Who is the fund manager of Aditya Birla Sun Life US Treasury 1-3 Year Bonds ETFS Passive FOF as on 30 Sep 2026?
+  answer_kind: not_in_data
+  gold_fn: not_in_data
+  params: {}
+  tags:
+    template: na_facts
+    phrasing: 2
+    short_name: false
+    schemes: [ABSLUS03]
+    gold_sections: []
+
+- id: T058
+  type: unanswerable
+  text: What was the 1-year return of the Nifty SDL Plus PSU Bond Sep 2026 60:40 Index Fund as on 30 September 2026?
+  answer_kind: not_in_data
+  gold_fn: not_in_data
+  params: {}
+  tags:
+    template: na_facts
+    phrasing: 3
+    short_name: true
+    schemes: [NSPPBS26]
+    gold_sections: []
+
+- id: T059
+  type: unanswerable
+  text: What is the expense ratio of Aditya Birla Sun Life Gold ETF as on 30 September 2026?
+  answer_kind: not_in_data
+  gold_fn: not_in_data
+  params: {}
+  tags:
+    template: na_facts
+    phrasing: 1
+    short_name: false
+    schemes: [GOLDETF]
+    gold_sections: []
+
+- id: T060
+  type: unanswerable
+  text: What was the 1-year return of Aditya Birla Sun Life US Treasury 3-10 Year Bonds ETFS Passive FOF as on 30 September 2026?
+  answer_kind: not_in_data
+  gold_fn: not_in_data
+  params: {}
+  tags:
+    template: na_facts
+    phrasing: 3
+    short_name: false
+    schemes: [ABSLUS10]
+    gold_sections: []

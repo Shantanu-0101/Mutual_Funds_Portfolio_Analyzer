@@ -37,6 +37,9 @@ class Question:
     params: dict = field(default_factory=dict)
     unit: str | None = None
     options: dict[str, list[str]] | None = None
+    # Extra facts about a question that scoring does not read (retrieval benchmark: template id,
+    # phrasing, short-name flag, gold sections). Optional, so the original questions.yaml loads unchanged.
+    tags: dict = field(default_factory=dict)
 
     @property
     def answerable(self) -> bool:
@@ -48,7 +51,7 @@ class Question:
 
 
 def _question(raw: dict[str, Any]) -> Question:
-    known = {"id", "type", "text", "answer_kind", "gold_fn", "params", "unit", "options"}
+    known = {"id", "type", "text", "answer_kind", "gold_fn", "params", "unit", "options", "tags"}
     extra = set(raw) - known
     if extra:
         raise QuestionError(f"{raw.get('id')}: unknown keys {sorted(extra)}")
@@ -56,6 +59,8 @@ def _question(raw: dict[str, Any]) -> Question:
         q = Question(**{k: raw[k] for k in raw})
     except TypeError as e:
         raise QuestionError(f"{raw.get('id')}: {e}") from None
+    if not isinstance(q.tags, dict):
+        raise QuestionError(f"{q.id}: tags must be a mapping")
     if q.type not in TYPES:
         raise QuestionError(f"{q.id}: unknown type {q.type!r}")
     if q.answer_kind not in ANSWER_KINDS:
