@@ -27,6 +27,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.config import llm_label
 from src.eval.questions import TYPES
 from src.eval.recommend import Recommendation, recommend, verdict_line
 from src.eval.runner import MANIFEST_FILE, METHODS, RESULTS_FILE
@@ -133,7 +134,8 @@ def summary_md(df: pd.DataFrame, manifest: dict, rec: Recommendation | None = No
     lines = ["# Evaluation results", "",
              f"Written by `python -m src.eval report` from `results/{RESULTS_FILE}` "
              f"({len(df)} rows: {len(methods)} methods × {df['qid'].nunique()} questions).", ""]
-    run_rows = [["LLM", f"{llm.get('provider')} / `{llm.get('model')}` (temperature "
+    label = llm_label(llm.get("provider"), f"`{llm.get('model')}`")
+    run_rows = [["LLM", f"{label} (temperature "
                         f"{manifest.get('config', {}).get('llm', {}).get('temperature')})"],
                 ["Embedding", f"`{manifest.get('embedding_model')}`, top_k "
                               f"{manifest.get('config', {}).get('retrieval', {}).get('top_k')}"],

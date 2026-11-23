@@ -24,6 +24,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
+from src.config import llm_label
 from src.eval.recommend import CHUNKERS, Recommendation, verdict_line
 from src.eval.runner import BASELINE
 
@@ -95,11 +96,11 @@ def _sheet_recommendation(ws: Worksheet, rec: Recommendation, df: pd.DataFrame, 
     counts = df.drop_duplicates("qid")["type"].value_counts()
     mix = ", ".join(f"{counts[t]} {t}" for t in dict.fromkeys(df["type"]) if t in counts)
 
-    ws["A1"] = "Best chunking method for this data"
+    ws["A1"] = "Best chunking method for Aditya Birla Sun Life (ABSL) monthly portfolio disclosure data"
     ws["A1"].font = TITLE
     info = [["Dataset", f"Aditya Birla Sun Life (ABSL) monthly portfolio disclosure, month(s) {months}"],
             ["Questions", f"{df['qid'].nunique()} ({mix}); {len(rec.qids)} used in the ranking"],
-            ["LLM", f"{llm.get('provider')} / {llm.get('model')}"],
+            ["LLM", llm_label(llm.get("provider"), llm.get("model"))],
             ["Retrieval", f"{manifest.get('embedding_model')}, top_k {cfg.get('retrieval', {}).get('top_k')}"],
             ["Rule", "Most correct answers; a tie goes to higher gold-row recall, then to fewer tokens per "
                      "question. The pandas baseline is compared but not ranked (it does no chunking)."],
@@ -223,19 +224,17 @@ def _sheet_questions(ws: Worksheet, rec: Recommendation, df: pd.DataFrame) -> No
 
 
 def _sheet_run(ws: Worksheet, manifest: dict, df: pd.DataFrame) -> None:
-    sessions = manifest.get("sessions", [])
-    rows = [["Started", manifest.get("created_at")],
-            ["Sessions", len(sessions)],
-            ["Last finished", sessions[-1].get("finished_at") if sessions else None],
-            ["Commit", (sessions[-1].get("commit") or "")[:7] if sessions else None],
-            ["LLM", f"{manifest.get('llm', {}).get('provider')} / {manifest.get('llm', {}).get('model')}"],
+    # Run timing, sessions and commit stay in run_manifest.json and summary.md; the Excel is for readers.
+    llm = manifest.get("llm", {})
+    rows = [["LLM", llm_label(llm.get("provider"), llm.get("model"))],
             ["Temperature", manifest.get("config", {}).get("llm", {}).get("temperature")],
             ["Embedding model", manifest.get("embedding_model")],
             ["Methods in this run", ", ".join(manifest.get("methods", sorted(set(df["method"]))))],
             ["Rows", f"{manifest.get('rows', len(df))} of {manifest.get('expected_rows', '–')} expected"],
             ["Pending rows", int(df["pending"].fillna(0).sum())],
             ["Run complete", "yes" if manifest.get("complete") else "no"]]
-    rows += [[f"Data file: {k}", f"sha256 {v[:16]}…"] for k, v in manifest.get("data_files", {}).items()]
+    rows += [[f"Data file: {k}", f"sha256 {v[:16]}…"] for k, v in manifest.get("data_files", {}).items()
+             if k.startswith("raw/")]   # the source files; the parsed parquet's hash stays in the manifest
     _table(ws, 1, ["Field", "Value"], rows)
     _widths(ws, [50, 70])
 

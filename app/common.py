@@ -21,7 +21,7 @@ from src.app_data import (  # noqa: E402
     BASELINE, METHOD_BLURB, STATUS_TEXT, AnswerView, format_value, holdings_by_key, indexed_months,
     rows_table, scheme_options, view_of,
 )
-from src.config import get_settings  # noqa: E402
+from src.config import get_settings, llm_label  # noqa: E402
 from src.parsing.pipeline import HOLDINGS_FILE  # noqa: E402
 
 SCHEMES_FILE = "schemes.parquet"
@@ -96,7 +96,7 @@ def require_data() -> None:
 def llm_caption() -> None:
     llm = settings().llm
     fb = llm.fallback if llm.fallback not in (None, "none") else "none"
-    st.sidebar.caption(f"LLM: **{llm.provider}** / `{llm.models.get(llm.provider)}` · fallback {fb} · "
+    st.sidebar.caption(f"LLM: **{llm_label(llm.provider, llm.models.get(llm.provider))}** · fallback {fb} · "
                        f"temperature {llm.temperature}. Change `llm.provider` in `config.yaml` to switch.")
 
 
@@ -165,7 +165,7 @@ def answer_body(v: AnswerView) -> None:
         st.markdown("\n".join(f"- {x}" for x in shown)
                     + (f"\n- … {len(v.items) - 25} more" if len(v.items) > 25 else ""))
     if v.fallback_reason:
-        st.caption(f"Answered by the fallback {v.provider} / {v.model} because {v.fallback_reason}.")
+        st.caption(f"Answered by the fallback {llm_label(v.provider, v.model)} because {v.fallback_reason}.")
 
 
 def usage_line(v: AnswerView) -> str:

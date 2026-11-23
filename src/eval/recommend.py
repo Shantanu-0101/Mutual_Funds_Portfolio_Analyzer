@@ -273,7 +273,8 @@ def recommend(df: pd.DataFrame) -> Recommendation:
     if missing:
         caveats.append(f"{len(missing)} question(s) were not asked to every chunker and are left out: "
                        f"{_qrange(missing)}.")
-    if second is not None and len(winners) == 1 and top.correct - second.correct <= SMALL_LEAD:
+    # a tie on correct answers broken by recall or tokens is already explained in the reasons
+    if second is not None and len(winners) == 1 and 0 < top.correct - second.correct <= SMALL_LEAD:
         caveats.append(f"The lead is small ({top.correct - second.correct} correct answer(s) out of {n}); with "
                        "this few questions it could be noise.")
     final = not not_run and not left_out and not missing

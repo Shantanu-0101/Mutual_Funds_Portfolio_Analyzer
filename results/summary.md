@@ -4,7 +4,7 @@ Written by `python -m src.eval report` from `results/results.csv` (196 rows: 7 m
 
 |  |  |
 | --- | --- |
-| LLM | velona / `x-ai/grok-4.20` (temperature 0) |
+| LLM | `x-ai/grok-4.20` (temperature 0) |
 | Embedding | `BAAI/bge-small-en-v1.5`, top_k 5 |
 | Run | started 2026-11-20T09:25:20+05:30, 2 session(s), last finished 2026-11-20T10:08:08+05:30 |
 | Commit | `4f395cb` (uncommitted changes) |
@@ -22,8 +22,6 @@ Rule: most correct answers; a tie goes to higher gold-row recall, then to fewer 
 - Weakest on cross_scheme: 40% (2/5). 2 of its 3 wrong answers are labelled retrieval miss: not every row the answer needs reached the LLM (mean gold-row recall 80%). scheme_level does better here (60%).
 - Cost: 7,576 tokens per question; the cheapest ranked chunker is row_wise (1,166).
 - Refusals: says the data does not contain the answer on 4 of 4 unanswerable questions, and wrongly refuses 2 of 24 answerable ones.
-
-> The lead is small (0 correct answer(s) out of 28); with this few questions it could be noise.  
 
 | Question type | Questions | Best method | Accuracy | Decided by |
 | --- | --- | --- | --- | --- |
