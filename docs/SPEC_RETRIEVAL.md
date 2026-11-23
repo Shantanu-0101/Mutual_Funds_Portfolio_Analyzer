@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| Status | v0.1 draft, 22 Nov 2026. Decisions RD1–RD12 (§13) are **proposed, not yet accepted**. |
+| Status | v0.2, 23 Nov 2026. Decisions RD1–RD12 (§13) **accepted** in Phase R0 (RD1, RD4, RD5, RD11 chosen by you; the rest taken as recommended, open to change in the R0 review). |
 | Builds on | The finished chunking project: [`SPEC.md`](SPEC.md), [`DESIGN.md`](DESIGN.md), [`results/summary.md`](../results/summary.md). Same repo, same data, same parser, same gold functions. |
-| Next document | `docs/IMPLEMENTATION_PLAN_RETRIEVAL.md` (written from this spec after the decisions are accepted) |
+| Next document | [`IMPLEMENTATION_PLAN_RETRIEVAL.md`](IMPLEMENTATION_PLAN_RETRIEVAL.md) (written from this spec in Phase R0) |
 | Purpose | Fix *what* we build and *how we judge it*. Not the order of work. |
 | Audience | Me (intern), my supervisor, and a fresh Claude Code chat that picks this up |
 
@@ -342,24 +342,24 @@ Unit tests never call a real LLM, never download models, and never need the real
 
 ---
 
-## 13. Decisions (proposed, to settle in Phase R0)
+## 13. Decisions (accepted 23 Nov 2026, Phase R0)
 
-| # | Decision | Recommendation |
-|---|---|---|
-| RD1 | Which chunker to hold fixed? | **`hierarchical`** (the winner; the verdict then applies to the pipeline actually used). Alternative: `row_wise` (retrieval matters more there, ~1,200 instead of ~7,600 tokens per call, so ~6× cheaper on Grok; but aggregations fail regardless of retrieval). |
-| RD2 | Which methods are in the main benchmark? | **M1–M8** as in §5. |
-| RD3 | BM25: own small implementation or the `rank-bm25` package? | **Own** (about 50 lines, unit-tested, no new dependency). |
-| RD4 | Reranker model | **`BAAI/bge-reranker-base`** (same family as the embedder; roughly 1 GB download, slower). Lighter option: `cross-encoder/ms-marco-MiniLM-L-6-v2` (under 100 MB, faster, English web-search trained). The download needs a yes. |
-| RD5 | Test set size | **~60 new + 28 original = ~88** for Stage A (free). For Stage B, use all 88 or a fixed random 60 (cheaper, see §9.2). |
-| RD6 | Shortlist size for Stage B | **Top 2 + M1 dense = 3 methods.** |
-| RD7 | Reuse cached Grok answers in the recorded run? | **Yes** when the prompt is byte-identical and the model is the same; flagged `cached`. (The chunking run used `--fresh`; here reuse saves credits.) |
-| RD8 | Show the bootstrap "not distinguishable" note in the verdict and Excel? | **Yes** in `summary.md`; in the Excel only if you want it (the chunking Excel had the tie caveat removed by hand). |
-| RD9 | LLM query rewriting (HyDE / multi-query)? | **Not in the main run.** Optional later, and if done, with a free model, or with Grok only after a separate estimate. |
-| RD10 | Larger embedding model (`dense_large`)? | **Optional** after R3, only if dense-based methods are close at the top. |
-| RD11 | Velona price per million input / output tokens | **You fill it in** from the Velona dashboard, so the estimator prints money, not just tokens. |
-| RD12 | Streamlit: add a retrieval-method picker to the Compare page? | **Optional**, after R5. |
+"By you" = chosen in the R0 chat. "As recommended" = the v0.1 recommendation, not objected to in R0; still open to change when you review the R0 pull request.
 
----
+| # | Decision | Accepted | How |
+|---|---|---|---|
+| RD1 | Which chunker to hold fixed? | **`hierarchical`**, so the verdict applies to the pipeline actually used. (Rejected: `row_wise`, ~6× cheaper on Grok, but aggregations fail whatever the retrieval.) | by you |
+| RD2 | Which methods are in the main benchmark? | **M1–M8** as in §5. | as recommended |
+| RD3 | BM25: own small implementation or the `rank-bm25` package? | **Own** (about 50 lines, unit-tested, no new dependency). | as recommended |
+| RD4 | Reranker model | **`BAAI/bge-reranker-base`** (~1.1 GB). The yes to download it is given; it is downloaded in R2, and its revision goes into the manifest. (Rejected: `cross-encoder/ms-marco-MiniLM-L-6-v2`.) | by you |
+| RD5 | Test set size | **~60 new + 28 original = ~88**, for Stage A **and** Stage B (all ~88, not a random 60). Stage B rough size: 3 methods × 88 = 264 calls, ~2.0 M tokens before cache hits. | by you |
+| RD6 | Shortlist size for Stage B | **Top 2 + M1 dense = 3 methods.** | as recommended |
+| RD7 | Reuse cached Grok answers? | **Yes** when the prompt is byte-identical and the model is the same; flagged `cached`. Checked in R0: the cache key is provider + model + messages, so this holds. | as recommended |
+| RD8 | Bootstrap "not distinguishable" note | **In `summary.md`: yes. In the Excel: no** (matches the hand-edited chunking Excel, which dropped the tie caveat). | as recommended |
+| RD9 | LLM query rewriting (HyDE / multi-query)? | **Not in the main run.** Optional later, with a free model, or with Grok only after a separate estimate. | as recommended |
+| RD10 | Larger embedding model (`dense_large`)? | **Optional** after R3, only if dense-based methods are close at the top; needs its own yes (download). | as recommended |
+| RD11 | Velona price per million input / output tokens | **Tokens only for now.** `budget.price_per_million_input/output` stay `null`; the estimator prints tokens. You may add the prices any time before R4. | by you |
+| RD12 | Streamlit: retrieval-method picker on the Compare page? | **Optional**, after R5. | as recommended |
 
 ## 14. Traceability
 
