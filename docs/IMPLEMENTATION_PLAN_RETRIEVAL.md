@@ -112,6 +112,16 @@ Branch `retrieval-r2-methods`. Grok cost: none. One download: `BAAI/bge-reranker
 As spec §10 for: each method (exactly k, ranked, no duplicates, no-overlap question, deterministic), BM25 (keeps "AAA", "PSU", numbers; hand-computed order on a small corpus), RRF (hand-computed fused ranks; one-list doc still ranks), MMR (λ = 1 equals dense order; λ = 0 picks diverse rows), scheme extraction (full, short, former name, code, two schemes, none, the four look-alike bank funds, `and`/`&`/case variants, never reads `params`), round robin (2 and 3 schemes; scheme with too few rows), pipeline default = today's dense (old `test_rag.py` still passes). Reranker tests use a stub scorer; no test downloads a model.
 
 **Proof:** `python -m src.retrieval offline --sample Q01` (or a small `demo` subcommand) prints the 5 children and their schemes for one question through every method, plus the scheme-filter debug for the look-alike bank questions.
+
+**Decided while building R2 (23 Nov 2026)**, small points the plan left open:
+
+- **Scheme filter, too few rows.** When the named schemes hold fewer rows than asked for (every method ranks 20, FR-R2.2; some FoFs have 1–3 rows), the rest is filled from the inner ranker on all schemes, placed after the filtered rows and counted in `debug.padded`. So every method returns exactly k (spec §5). The top 5 stay inside the named schemes whenever they have ≥ 5 rows.
+- **Scheme codes** match only as an exact, case-sensitive word, and the 4 codes that are also ordinary words of scheme names (`NIFTY`, `MIDCAP`, `PLUS`, `MNC`) are not used as codes. On the real list no name variant points to two schemes.
+- **Reranker cache key** = model + pinned revision + question hash + child **text** hash (not the child id), so a re-indexed row with changed text is scored again.
+- **`retrieval_benchmark:`** is an optional config section; the chunking run's fingerprint leaves it out, so `results/run_manifest.json` still matches (checked: `config_sha256` unchanged).
+- **Reranker** `BAAI/bge-reranker-base` pinned at revision `2cfc18c9415c912f9d8155881c133215df768a70` (safetensors only). It scores with raw logits, not the default sigmoid: same order, but the sigmoid saturated and made many rows tie at ~0.999. Uncached it takes several seconds per question on this CPU (50 pairs); cached, a few milliseconds. R3 must report the uncached time as latency.
+- **Found on the real data, left as is (R3 measures it):** on Q20 the reranker puts TREPS / cash rows above the two Infosys rows the question asks about.
+- **Found on the real data, left as is (R3 reports it):** D031 names a fund held by a FoF, "ICICI Prudential Large Cap Fund", and the filter also matches our own Large Cap Fund there (a `filter_wrong` case). Every other dev and test question gets exactly its schemes.
 **Also:** open the Streamlit app pages once (spec §12 risk: pipeline change).
 **Commit:** `retrieval r2: methods M1-M7, scheme extraction, pipeline hook`. **STOP.**
 

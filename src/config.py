@@ -132,6 +132,9 @@ class Settings:
     eval: EvalSettings
     config_file: Path
     secrets: Secrets = field(default_factory=Secrets, repr=False)
+    # Retrieval benchmark (docs/SPEC_RETRIEVAL.md §7): method defaults, reranker, dev grids. Optional;
+    # src/retrieval/settings.py validates it. Kept out of the chunking run's fingerprint (runner).
+    retrieval_benchmark: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Plain dict of everything except secrets, for the run manifest."""
@@ -194,7 +197,7 @@ def load_settings(
     if not isinstance(raw, dict):
         raise ConfigError(f"{config_path} must contain a mapping at the top level")
 
-    known = {"paths", "data", "embedding", "retrieval", "llm", "chunking", "baseline", "eval"}
+    known = {"paths", "data", "embedding", "retrieval", "llm", "chunking", "baseline", "eval", "retrieval_benchmark"}
     unknown = raw.keys() - known
     if unknown:
         raise ConfigError(f"config has unknown top-level sections: {sorted(unknown)}")
@@ -239,6 +242,9 @@ def load_settings(
         raise ConfigError(f"llm.reasoning_effort must be low, medium, high or null, got {llm.reasoning_effort!r}")
 
     chunking = _section(raw, "chunking")
+    bench = raw.get("retrieval_benchmark") or {}
+    if not isinstance(bench, dict):
+        raise ConfigError("config section 'retrieval_benchmark' must be a mapping")
 
     return Settings(
         paths=paths,
@@ -250,6 +256,7 @@ def load_settings(
         baseline=_build(BaselineSettings, _section(raw, "baseline"), "baseline"),
         eval=_build(EvalSettings, _section(raw, "eval"), "eval"),
         config_file=config_path.resolve(),
+        retrieval_benchmark=bench,
         secrets=Secrets(
             velona_api_key=env.get("GROK_API_KEY") or env.get("VELONA_API_KEY") or None,
             xai_api_key=env.get("XAI_API_KEY") or None,

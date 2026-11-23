@@ -39,6 +39,8 @@ class Retrieval:
     chunks: list[Retrieved]
     latency_ms: float
     children: list[Retrieved] = field(default_factory=list)   # hierarchical only: what the search returned
+    method: str | None = None                  # retrieval method (benchmark); None = the default dense search
+    debug: dict = field(default_factory=dict)  # the method's debug (e.g. schemes the filter found)
 
     @property
     def context_rows(self) -> list[RowKey]:
