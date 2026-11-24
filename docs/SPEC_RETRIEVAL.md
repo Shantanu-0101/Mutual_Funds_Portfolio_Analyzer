@@ -259,7 +259,7 @@ Proposed phases (the implementation plan fills in tasks):
 
 ### 9.1 Reproducibility
 - Fixed seeds (question generation, bootstrap, any tie-breaks), temperature 0, pinned versions (any new package goes into `requirements.txt` and `requirements-lock.txt`).
-- Embedding and reranker scores are deterministic on CPU. The reranker model name and revision go into the manifest.
+- Embedding and reranker scores are deterministic on CPU. The reranker model name and revision go into the manifest. **Dense ranking is therefore computed from the stored child embeddings, not asked of Chroma's approximate index**, which answered two processes differently (R3 notes, 23 Nov 2026); the app keeps the Chroma path, and M1 still reproduces the recorded chunking run on all 28 original questions.
 - A resumed Stage B run must use the same config, method settings and question file, or it stops (as `ResumeMismatch` does today).
 
 ### 9.2 Cost and Grok budget

@@ -2,8 +2,10 @@
 
 - ``ChildCorpus``: every child (one holding row) of the ``hierarchical`` collection for the month, with
   its text, metadata and **stored** embedding, loaded once. BM25, MMR and the scheme filter work off it.
-- ``DenseSearch``: today's search (embed the question with bge-small, query Chroma by cosine), with an
-  optional scheme restriction. M1 uses it unchanged, so M1 returns what the chunking run retrieved.
+- ``DenseSearch``: today's search (embed the question with bge-small, rank the children by cosine), with
+  an optional scheme restriction. M1 uses it unchanged, so M1 returns what the chunking run retrieved;
+  it scores the stored embeddings directly, because Chroma's index is approximate and answered two
+  processes differently (``DenseSearch.rank``).
 - ``RetrievalMethod``: ``retrieve(question, k) -> MethodResult`` (ranked children, latency, debug).
   Subclasses implement ``rank(question, n, schemes)``: the top ``n`` children as (corpus index, score),
   searching only inside ``schemes`` when given. That restriction is what lets the scheme filter (M6) and
@@ -91,14 +93,18 @@ class ChildCorpus:
 # --------------------------------------------------------------------------- dense search
 
 class DenseSearch:
-    """bge-small + Chroma, exactly as ``Retriever.retrieve`` (cosine, score = 1 - distance)."""
+    """bge-small cosine over the month's children: the same search ``Retriever.retrieve`` does, scored the
+    same way (score = 1 - cosine distance), but computed exactly instead of through Chroma's approximate
+    index — see ``rank``. An optional scheme restriction is what lets M6 and M8 wrap it."""
 
-    def __init__(self, embedder: Embedder, collection, corpus: ChildCorpus, month: str, month_filter: bool):
+    def __init__(self, embedder: Embedder, collection, corpus: ChildCorpus, month: str, month_filter: bool,
+                 exact: bool = True):
         self.embedder = embedder
         self.collection = collection
         self.corpus = corpus
         self.month = month
         self.month_filter = month_filter       # False when the collection holds only this month (as today)
+        self.exact = exact                     # see rank(): False asks Chroma (the app's own path)
         self._qvec: dict[str, np.ndarray] = {}
 
     def load(self) -> None:
@@ -121,12 +127,32 @@ class DenseSearch:
         return parts[0] if len(parts) == 1 else {"$and": parts}
 
     def rank(self, question: str, n: int, schemes: Sequence[str] | None = None) -> Ranked:
+        """Exact cosine over the stored child embeddings by default (``exact``), else Chroma's own query.
+
+        Both compute the same thing — cosine against every child of the month — but Chroma's HNSW index
+        is **approximate**: inside one process it answers the same way every time, yet two processes can
+        return a different child at the same rank when scores sit close together (found 23 Nov 2026 on
+        dev question D029, where it moved a row of another index fund into rank 3). Every dense-based
+        method would inherit that wobble, and it is the size of the gaps this benchmark measures, so
+        Stage A ranks the stored vectors itself: ~5,600 × 384 floats, a millisecond, and the same answer
+        in every run (§9.1). ``exact=False`` keeps the app's own path, which R2's tests compare against."""
         n = min(n, self.corpus.count(schemes))
         if n <= 0:
             return []
-        res = self.collection.query(query_embeddings=[self.query_vector(question).tolist()], n_results=n,
-                                    where=self.where(schemes), include=["distances"])
-        return [(self.corpus.index[i], 1.0 - float(d)) for i, d in zip(res["ids"][0], res["distances"][0])]
+        if not self.exact:
+            res = self.collection.query(query_embeddings=[self.query_vector(question).tolist()], n_results=n,
+                                        where=self.where(schemes), include=["distances"])
+            return [(self.corpus.index[i], 1.0 - float(d)) for i, d in zip(res["ids"][0], res["distances"][0])]
+        positions = self.corpus.positions(schemes)
+        return order_scores(positions, self.cosine(question)[positions], n)
+
+    def cosine(self, question: str) -> np.ndarray:
+        """Cosine similarity of the question to every child, in corpus order (what Chroma's score means)."""
+        vectors = self.corpus.embeddings
+        q = self.query_vector(question).astype(np.float32)
+        norms = np.linalg.norm(vectors, axis=1) * float(np.linalg.norm(q))
+        with np.errstate(invalid="ignore", divide="ignore"):
+            return np.where(norms > 0, vectors @ q / np.where(norms > 0, norms, 1.0), 0.0)
 
 
 # --------------------------------------------------------------------------- shared state

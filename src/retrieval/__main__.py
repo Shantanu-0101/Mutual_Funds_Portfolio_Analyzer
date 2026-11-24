@@ -1,4 +1,4 @@
-"""``python -m src.retrieval {questions|demo}``
+"""``python -m src.retrieval {questions|demo|offline|estimate}``
 
 - ``questions``  generate ``dev.yaml`` and ``test_new.yaml`` from the templates (seed ``eval.seed``,
                  month ``data.eval_months[0]``), check they load, and write the manual check of 10
@@ -11,7 +11,17 @@
                  must equal the ``retrieved`` column of ``results/results.csv`` (hierarchical rows).
                  ``--lookalikes`` prints what the scheme filter finds in look-alike bank-fund questions.
 
-Later phases add ``offline``, ``estimate``, ``run`` and ``report`` here.
+- ``offline``   (Phase R3) Stage A, free: every method on a question set, no LLM call.
+                ``--set dev`` runs every grid value (§5), picks each method's settings by mean
+                ``section_recall@5``, declares M8 from those dev results and writes both into
+                ``config.yaml`` with today's date (``--no-write`` to only print them).
+                ``--set test`` runs M1–M8 once with the chosen settings and writes ``offline.csv``,
+                ``offline_summary.md`` and ``recall_by_method.png``, with the Stage B shortlist.
+
+- ``estimate``  (Phase R3) what a Stage B run would cost in tokens, without one call: real prompts,
+                real cache hits, tokens only (RD11). Prints the smoke run (3 questions) and the full run.
+
+Later phases add ``run`` and the Stage B part of ``report`` here.
 """
 
 from __future__ import annotations
@@ -22,7 +32,7 @@ from collections import Counter
 
 import pandas as pd
 
-from src.config import get_settings
+from src.config import DEFAULT_CONFIG, get_settings
 from src.eval.manual_check import manual_check_md
 from src.eval.questions import QUESTIONS_FILE, load_questions, mix
 from src.parsing.pipeline import HOLDINGS_FILE
@@ -157,6 +167,147 @@ def cmd_demo(settings, args) -> int:
     return 0
 
 
+def _progress(label: str, n: int) -> None:
+    print(f"  {label:<34} on {n} questions …")
+
+
+def _world(settings, args):
+    """Shared state, parents, the question set, its gold targets and the original question ids."""
+    from src.retrieval.offline import load_world, targets_for
+    from src.retrieval.questions.sets import load_set
+
+    shared, parents, holdings, row_parent = load_world(settings)
+    questions = load_set(args.set, settings.data.eval_months)
+    targets = targets_for(questions, holdings, row_parent)
+    originals = frozenset(q.id for q in load_questions(QUESTIONS_FILE, settings.data.eval_months))
+    print(f"corpus: {len(shared.corpus)} children of {shared.dense.month}; set {args.set}: "
+          f"{len(questions)} questions, {sum(t.answerable for t in targets.values())} answerable")
+    return shared, parents, questions, targets, originals
+
+
+def _dev_tables(dev, chosen, combo=None) -> None:
+    from src.retrieval.offline import MRR_K, rank_variants
+    from src.retrieval.settings import METHOD_IDS
+
+    print(f"\n{'method':<16}{'tried':>6}  {'chosen':<34}{'recall@5':>10}{'hit@5':>8}{'mrr@10':>8}{'ms':>8}")
+    for name, s in chosen.items():
+        tried = len(set(dev[dev["method"] == name]["variant"]))
+        opts = ", ".join(f"{k}={v}" for k, v in sorted(s.settings.items())) or "–"
+        print(f"{METHOD_IDS[name] + ' ' + name:<16}{tried:>6}  {opts:<34}{s.section_recall_5:>9.1%}"
+              f"{s.hit_5:>8.1%}{s.mrr_10:>8.3f}{s.median_ms:>8.0f}")
+    if combo is not None:
+        cands = rank_variants(dev, list(dict.fromkeys(dev[dev["method"] == "best_combo"]["variant"])))
+        print(f"\nM8 best_combo candidates (dev only), by mean section_recall@5 / hit@5 / mrr@{MRR_K}:")
+        for c in cands:
+            mark = "  <- declared" if c.variant == combo.variant else ""
+            opts = ", ".join(f"{k}={v}" for k, v in sorted(c.settings.items()))
+            print(f"  {c.rank:>2}. {opts:<40}{c.section_recall_5:>7.1%}{c.hit_5:>8.1%}{c.mrr_10:>8.3f}"
+                  f"{c.median_ms:>8.0f} ms{mark}")
+
+
+def cmd_offline(settings, args) -> int:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from src.retrieval.base import METHOD_NAMES
+    from src.retrieval.offline import (OFFLINE_FILE, combo_variants, choose_combo, choose_variants, frame,
+                                       grid_variants, load_offline, rank_methods, run_set, shortlist,
+                                       write_choices, write_offline)
+    from src.retrieval.report import CHART_FILE, write_offline_report
+    from src.retrieval.settings import METHOD_IDS
+
+    shared, parents, questions, targets, originals = _world(settings, args)
+    top_k = settings.retrieval.top_k
+    out_dir = settings.paths.results / "retrieval"
+    csv_path = out_dir / OFFLINE_FILE
+    rankers = [m for m in METHOD_NAMES if m != "best_combo"]
+
+    if args.set == "dev":
+        grid = [(m, ov) for m in rankers for ov in grid_variants(shared.bench, m)]
+        print(f"\ndev grid: {len(grid)} method variants × {len(questions)} questions (free, no LLM call)")
+        rows = run_set(shared, parents, questions, targets, "dev", grid, top_k, originals, _progress)
+        dev = frame(rows)
+        chosen = choose_variants(dev, rankers)
+        _dev_tables(dev, chosen)
+
+        # The M8 candidates must use the dev choices, so apply them before building the combos.
+        for name, s in chosen.items():
+            shared.bench.methods[name] = dict(s.settings)
+        print(f"\nM8 candidates: {len(combo_variants())} (filter × ranker) × {len(questions)} questions")
+        rows += run_set(shared, parents, questions, targets, "dev",
+                        [("best_combo", ov) for ov in combo_variants()], top_k, originals, _progress)
+        dev = frame(rows)
+        combo = choose_combo(dev)
+        _dev_tables(dev, chosen, combo)
+
+        write_offline(csv_path, rows, replace_sets={"dev"})
+        print(f"\nwrote {csv_path} ({len(rows)} rows)")
+        if args.no_write:
+            print("config.yaml not touched (--no-write)")
+            return 0
+        date = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d %b %Y")
+        choices = {name: dict(s.settings) for name, s in chosen.items()}
+        choices["best_combo"] = dict(combo.settings)
+        note = f"{'filter + ' if combo.settings.get('filter') else 'no filter, '}{combo.settings['ranker']}"
+        for line in write_choices(DEFAULT_CONFIG, choices, date, {"best_combo": note}):
+            print(f"  config.yaml: {line.strip()}")
+        print("\nSTOP 1: check the dev choices and the M8 recipe above (and the config.yaml diff) before "
+              "the test run.")
+        return 0
+
+    missing = [m for m in METHOD_NAMES if shared.bench.methods.get(m) is None]
+    if missing:
+        print(f"not declared in config.yaml yet: {missing}. Run `offline --set dev` first (R3.4).")
+        return 1
+    variants = [(m, None) for m in METHOD_NAMES]
+    print(f"\n{args.set} run: {len(variants)} methods × {len(questions)} questions, chosen settings")
+    rows = run_set(shared, parents, questions, targets, args.set, variants, top_k, originals, _progress)
+    write_offline(csv_path, rows, replace_sets={args.set})
+    print(f"\nwrote {csv_path} ({len(rows)} rows for set {args.set})")
+
+    df = load_offline(csv_path)
+    ranking = rank_methods(df[df["set"] == args.set])
+    picked = shortlist(ranking)
+    print(f"\n{'#':>2} {'method':<22}{'recall@5':>10}{'hit@5':>8}{'mrr@10':>8}{'rows@5':>8}{'ctx rows':>9}"
+          f"{'ctx tok':>9}{'median ms':>10}  Stage B")
+    for s in ranking:
+        print(f"{s.rank:>2} {METHOD_IDS[s.method] + ' ' + s.method:<22}{s.section_recall_5:>9.1%}"
+              f"{s.hit_5:>8.1%}{s.mrr_10:>8.3f}{s.row_recall_5:>8.1%}{s.context_recall:>9.1%}"
+              f"{s.context_tokens:>9,.0f}{s.median_ms:>10,.0f}"
+              f"{'  yes' if s.method in set(picked) else ''}")
+    print(f"\nshortlist for Stage B (RD6): {', '.join(picked)}")
+    summary = write_offline_report(out_dir, args.set)
+    print(f"wrote {summary}\nwrote {out_dir / CHART_FILE}")
+    print("\nSTOP 2: run `python -m src.retrieval estimate --methods " + " ".join(picked) +
+          f" --set {args.set}` and approve the Stage B budget before any paid call.")
+    return 0
+
+
+def cmd_estimate(settings, args) -> int:
+    from src.retrieval.estimate import (COMPLETION_TOKENS, PROMPT_OVERHEAD, estimate,
+                                        smoke_questions)
+    from src.retrieval.offline import load_world
+    from src.retrieval.questions.sets import load_set
+
+    shared, parents, _, _ = load_world(settings)
+    questions = load_set(args.set, settings.data.eval_months)
+    methods = args.methods
+    print(f"\nestimate for {len(methods)} method(s) on set {args.set}: {', '.join(methods)}")
+    print(f"prompt = retrieved context + {PROMPT_OVERHEAD} overhead tokens; completion "
+          f"{COMPLETION_TOKENS} per call; cache hits are free (FR-R9.1, RD11: tokens only)\n")
+    smoke = smoke_questions(questions)
+    runs = [("smoke", smoke)] if smoke else []
+    runs.append((f"full ({len(questions)} questions)", list(questions)))
+    for label, qs in runs:
+        est = estimate(settings, shared, parents, qs, methods, args.set)
+        print(f"{label}: {len(methods)} × {len(qs)} questions"
+              + (f" ({', '.join(q.id + ' ' + q.type for q in qs)})" if label == "smoke" else ""))
+        print(est.table(), "\n")
+    print("No call was made. A paid run needs this estimate, your yes in chat, and `run --max-tokens N` "
+          "(§9.2).")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
     ap = argparse.ArgumentParser(prog="python -m src.retrieval", description=__doc__.split("\n\n")[0])
@@ -169,12 +320,23 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--methods", nargs="+", help="method names (default: every declared method)")
     d.add_argument("--check-dense", action="store_true", help="M1 vs the recorded chunking run, 28 questions")
     d.add_argument("--lookalikes", action="store_true", help="scheme filter on look-alike bank-fund questions")
+    o = sub.add_parser("offline", help="Stage A: every method on a question set, no LLM call (R3)")
+    o.add_argument("--set", default="dev", choices=("dev", "test", "test_new"),
+                   help="dev: grid search, choices and M8; test: one run with the chosen settings")
+    o.add_argument("--no-write", action="store_true", help="dev: print the choices, leave config.yaml alone")
+    e = sub.add_parser("estimate", help="tokens a Stage B run would need, without any call (FR-R9.1)")
+    e.add_argument("--methods", nargs="+", required=True, help="the shortlisted method names")
+    e.add_argument("--set", default="test", choices=("dev", "test", "test_new"))
     args = ap.parse_args(sys.argv[1:] if argv is None else argv)
     settings = get_settings()
     if args.cmd == "questions":
         return cmd_questions(settings)
     if args.cmd == "demo":
         return cmd_demo(settings, args)
+    if args.cmd == "offline":
+        return cmd_offline(settings, args)
+    if args.cmd == "estimate":
+        return cmd_estimate(settings, args)
     return 1
 
 
