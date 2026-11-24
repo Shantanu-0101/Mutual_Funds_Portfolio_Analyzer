@@ -21,7 +21,13 @@
 - ``estimate``  (Phase R3) what a Stage B run would cost in tokens, without one call: real prompts,
                 real cache hits, tokens only (RD11). Prints the smoke run (3 questions) and the full run.
 
-Later phases add ``run`` and the Stage B part of ``report`` here.
+- ``run``       (Phase R4) Stage B, **paid**: the shortlisted methods × the question set through the real
+                LLM → ``results/retrieval/results.csv`` (+ manifest and ``spend_log.csv``). Prints the
+                estimate first and needs ``--max-tokens N``; ``--smoke`` asks only the three smoke
+                questions, ``--check-model`` adds the model-drift check (§12). Resumable: run it again
+                to pick up pending rows.
+
+Later phases add the Stage B part of ``report`` here.
 """
 
 from __future__ import annotations
@@ -308,6 +314,72 @@ def cmd_estimate(settings, args) -> int:
     return 0
 
 
+def cmd_run(settings, args) -> int:
+    """Stage B: paid. Prints the estimate, then asks only what the cap allows (§9.2)."""
+    import logging
+
+    from src.eval.runner import ResumeMismatch
+    from src.retrieval.estimate import smoke_questions
+    from src.retrieval.offline import load_world
+    from src.retrieval.questions.sets import load_set
+    from src.retrieval.run import SPEND_FILE, estimate, stage_b
+
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
+    world = load_world(settings)
+    shared, parents = world[0], world[1]
+    questions = load_set(args.set, settings.data.eval_months)
+    methods = args.methods
+    unknown = [m for m in methods if shared.bench.methods.get(m) is None]
+    if unknown:
+        print(f"not declared in config.yaml: {unknown}", file=sys.stderr)
+        return 2
+    phase = "smoke" if args.smoke else "full"
+    qs = smoke_questions(questions) if args.smoke else list(questions)
+
+    est = estimate(settings, shared, parents, qs, methods, args.set)
+    print(f"\n{phase} run, set {args.set}: {len(methods)} × {len(qs)} questions "
+          f"({', '.join(methods)}) on {settings.llm.provider} / {settings.llm.model}")
+    print(est.table())
+    total = est.total_tokens
+    if args.check_model:
+        from src.retrieval.run import REFERENCE, check_tokens
+
+        extra = check_tokens(settings, shared, parents, qs, args.set)
+        total += extra
+        print(f"\n--check-model re-asks {REFERENCE} (M1) on these {len(qs)} questions with the cache off "
+              f"(§12): about {extra:,} tokens more, {total:,} in all.")
+    if args.max_tokens is None:
+        print("\nNo call was made: a paid run needs --max-tokens N (FR-R9.2). "
+              f"The estimate above says about {total:,} tokens.", file=sys.stderr)
+        return 2
+    print(f"\ncap: --max-tokens {args.max_tokens:,}; cache reuse "
+          f"{'off (--fresh)' if args.fresh else 'on'}\n")
+
+    try:
+        out = stage_b(settings, methods=methods, set_name=args.set, phase=phase, questions=qs,
+                      max_tokens=args.max_tokens, fresh=args.fresh, check_model=args.check_model,
+                      world=world)
+    except ResumeMismatch as e:
+        print(str(e), file=sys.stderr)
+        return 2
+    s, led = out.summary, out.ledger
+    print(f"\nasked {s.asked}, skipped {s.skipped} already done; {s.total_rows}/{s.expected_rows} rows, "
+          f"{len(s.pending)} pending")
+    print(f"spent: {led.paid_calls} paid call(s) of {led.calls}, {led.prompt_tokens:,} prompt + "
+          f"{led.completion_tokens:,} completion = {led.total_tokens:,} tokens "
+          f"(estimate {out.estimate.total_tokens:,})")
+    if out.model_check:
+        print(f"model check ({out.model_check['model']}): {out.model_check['verdict']}")
+    if s.stopped:
+        print(f"stopped: {s.stopped}")
+    if s.pending:
+        print("pending (run again to ask): " + ", ".join(f"{m}:{q}" for m, q in s.pending[:12])
+              + (" …" if len(s.pending) > 12 else ""))
+    out_dir = settings.paths.results / "retrieval"
+    print(f"wrote {out_dir / 'results.csv'}, {out_dir / SPEND_FILE}")
+    return 0 if s.complete else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
     ap = argparse.ArgumentParser(prog="python -m src.retrieval", description=__doc__.split("\n\n")[0])
@@ -327,6 +399,14 @@ def main(argv: list[str] | None = None) -> int:
     e = sub.add_parser("estimate", help="tokens a Stage B run would need, without any call (FR-R9.1)")
     e.add_argument("--methods", nargs="+", required=True, help="the shortlisted method names")
     e.add_argument("--set", default="test", choices=("dev", "test", "test_new"))
+    r = sub.add_parser("run", help="Stage B (paid): shortlisted methods × questions through the LLM (R4)")
+    r.add_argument("--methods", nargs="+", required=True, help="the shortlisted method names (RD6)")
+    r.add_argument("--set", default="test", choices=("dev", "test", "test_new"))
+    r.add_argument("--smoke", action="store_true", help="only the 3 smoke questions (FR-R3.2)")
+    r.add_argument("--max-tokens", type=int, help="hard cap on this session's paid tokens (FR-R9.2)")
+    r.add_argument("--fresh", action="store_true", help="start a new results.csv and skip the LLM cache")
+    r.add_argument("--check-model", action="store_true",
+                   help="re-ask M1's prompts uncached and compare with the cached answers (§12)")
     args = ap.parse_args(sys.argv[1:] if argv is None else argv)
     settings = get_settings()
     if args.cmd == "questions":
@@ -337,6 +417,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_offline(settings, args)
     if args.cmd == "estimate":
         return cmd_estimate(settings, args)
+    if args.cmd == "run":
+        return cmd_run(settings, args)
     return 1
 
 
