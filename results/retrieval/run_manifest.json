@@ -1,0 +1,396 @@
+{
+ "created_at": "2026-11-24T10:14:17+05:30",
+ "setup": {
+  "config_sha256": "9f6d8886b96dcdee13d6a97c6147f70a0124f39baf3a0af13a99dd1234124e1c",
+  "llm_provider": "velona",
+  "llm_model": "x-ai/grok-4.20",
+  "question_set": "test",
+  "questions_sha256": "a74a671f8bfc2e49fa146452c1eda77cb9c1909b32f5ce83f7634236a0b1d61f",
+  "methods": {
+   "best_combo": {
+    "filter": true,
+    "ranker": "mmr"
+   },
+   "scheme_filter": {
+    "fuzzy_threshold": 0.85,
+    "ranker": "dense"
+   },
+   "dense": {}
+  },
+  "reranker": {
+   "model": "BAAI/bge-reranker-base",
+   "revision": "2cfc18c9415c912f9d8155881c133215df768a70"
+  }
+ },
+ "llm": {
+  "provider": "velona",
+  "model": "x-ai/grok-4.20",
+  "fallback": "groq",
+  "fallback_rows_rerun": true
+ },
+ "embedding_model": "BAAI/bge-small-en-v1.5",
+ "methods": [
+  "best_combo",
+  "scheme_filter",
+  "dense"
+ ],
+ "questions": [
+  "Q01",
+  "Q08",
+  "Q20"
+ ],
+ "data_files": {
+  "raw/30092026_ABSLMF_MonthlyDisclosure.xls": "8eb8ef4f1a34084f1ed8b29080a563f11e8c5780e8e935598d7d2dde045faac7",
+  "raw/31082026_ABSLMF_MonthlyDisclosure.xls": "68a8279d8c7c2f1d259784664827837eba260983d69fbc06646e860c45206dc8",
+  "raw/31102026_ABSLMF_MonthlyDisclosure.xls": "494538445357870ffc143cd608cde4e1be8fdc1c59346c62a2f58d488e1fd433",
+  "raw/ABSL_Monthly_Portfolio_Report_July 2026.xls": "600bfcb172b17a38b5df7c70d13af687f0c2fec2b7e5eacb5906184b6ab5bb8c",
+  "processed/holdings.parquet": "288fec0c31e6ac619dffe07bee53c5c24abf5a6e3f40dd58cd68bec69f358351"
+ },
+ "config": {
+  "paths": {
+   "raw": "C:\\Users\\DELL\\OneDrive\\Desktop\\MFPA\\data\\raw",
+   "processed": "C:\\Users\\DELL\\OneDrive\\Desktop\\MFPA\\data\\processed",
+   "chroma": "C:\\Users\\DELL\\OneDrive\\Desktop\\MFPA\\data\\chroma",
+   "cache": "C:\\Users\\DELL\\OneDrive\\Desktop\\MFPA\\data\\cache",
+   "results": "C:\\Users\\DELL\\OneDrive\\Desktop\\MFPA\\results"
+  },
+  "data": {
+   "file_glob": "*ABSL*.xls",
+   "eval_months": [
+    "2026-09-30"
+   ]
+  },
+  "embedding": {
+   "model": "BAAI/bge-small-en-v1.5",
+   "max_tokens": 512,
+   "batch_size": 32
+  },
+  "retrieval": {
+   "top_k": 5
+  },
+  "llm": {
+   "provider": "velona",
+   "fallback": "groq",
+   "models": {
+    "velona": "x-ai/grok-4.20",
+    "xai": "grok-4.20-0309-non-reasoning",
+    "groq": "openai/gpt-oss-120b",
+    "gemini": null,
+    "mock": "mock"
+   },
+   "reasoning_effort": "low",
+   "temperature": 0,
+   "max_output_tokens": 2000,
+   "timeout_s": 60,
+   "retries": 3
+  },
+  "chunking": {
+   "fixed_size": {
+    "chunk_tokens": 256,
+    "overlap_tokens": 32
+   },
+   "header_window": {
+    "rows_per_chunk": 10
+   },
+   "scheme_level": {
+    "on_overflow": "truncate_and_warn"
+   },
+   "section_aware": {
+    "max_tokens": 512
+   },
+   "hierarchical": {
+    "child": "row",
+    "parent": "section"
+   }
+  },
+  "baseline": {
+   "timeout_s": 10
+  },
+  "eval": {
+   "rel_tolerance": 0.01,
+   "abs_tolerance_pct_points": 0.01,
+   "manual_check_n": 10,
+   "seed": 42
+  },
+  "config_file": "C:\\Users\\DELL\\OneDrive\\Desktop\\MFPA\\config.yaml",
+  "retrieval_benchmark": {
+   "candidate_k": 20,
+   "methods": {
+    "dense": {},
+    "bm25": {
+     "b": 0.9,
+     "k1": 2.0
+    },
+    "hybrid_rrf": {
+     "depth": 20,
+     "rrf_k": 60
+    },
+    "dense_rerank": {
+     "depth": 20
+    },
+    "hybrid_rerank": {
+     "depth": 50,
+     "hybrid_depth": 50
+    },
+    "scheme_filter": {
+     "fuzzy_threshold": 0.85,
+     "ranker": "dense"
+    },
+    "mmr": {
+     "depth": 50,
+     "lambda": 0.7
+    },
+    "best_combo": {
+     "filter": true,
+     "ranker": "mmr"
+    }
+   },
+   "grids": {
+    "hybrid_rrf": {
+     "depth": [
+      20,
+      50,
+      100
+     ]
+    },
+    "dense_rerank": {
+     "depth": [
+      20,
+      50
+     ]
+    },
+    "hybrid_rerank": {
+     "depth": [
+      20,
+      50
+     ]
+    },
+    "scheme_filter": {
+     "fuzzy_threshold": [
+      0.8,
+      0.85,
+      0.9
+     ]
+    },
+    "mmr": {
+     "lambda": [
+      0.3,
+      0.5,
+      0.7
+     ]
+    },
+    "bm25": {
+     "k1": [
+      1.2,
+      1.5,
+      2.0
+     ],
+     "b": [
+      0.5,
+      0.75,
+      0.9
+     ]
+    }
+   },
+   "reranker": {
+    "model": "BAAI/bge-reranker-base",
+    "revision": "2cfc18c9415c912f9d8155881c133215df768a70",
+    "max_length": 512,
+    "batch_size": 16
+   }
+  }
+ },
+ "stage": "B",
+ "phase": "smoke",
+ "question_set": "test",
+ "retrieval_methods": [
+  "best_combo",
+  "scheme_filter",
+  "dense"
+ ],
+ "method_settings": {
+  "best_combo": {
+   "filter": true,
+   "ranker": "mmr"
+  },
+  "scheme_filter": {
+   "fuzzy_threshold": 0.85,
+   "ranker": "dense"
+  },
+  "dense": {}
+ },
+ "reranker": {
+  "model": "BAAI/bge-reranker-base",
+  "revision": "2cfc18c9415c912f9d8155881c133215df768a70",
+  "max_length": 512,
+  "batch_size": 16
+ },
+ "candidate_k": 20,
+ "top_k": 5,
+ "max_tokens": 55000,
+ "estimate": {
+  "set": "test",
+  "prompt_overhead": 680,
+  "completion_per_call": 460,
+  "calls": 9,
+  "cached": 4,
+  "to_pay": 5,
+  "prompt_tokens": 22088,
+  "completion_tokens": 2300,
+  "total_tokens": 24388,
+  "methods": [
+   {
+    "method": "best_combo",
+    "calls": 3,
+    "cached": 0,
+    "prompt_tokens": 12759,
+    "completion_tokens": 1380
+   },
+   {
+    "method": "scheme_filter",
+    "calls": 3,
+    "cached": 1,
+    "prompt_tokens": 9329,
+    "completion_tokens": 920
+   },
+   {
+    "method": "dense",
+    "calls": 3,
+    "cached": 3,
+    "prompt_tokens": 0,
+    "completion_tokens": 0
+   }
+  ]
+ },
+ "sessions": [
+  {
+   "started_at": "2026-11-24T10:14:17+05:30",
+   "fresh": false,
+   "commit": "f71c48b7583886a710959e33f6698cb7238296a4",
+   "branch": "retrieval-r4-grok",
+   "dirty": false,
+   "finished_at": "2026-11-24T10:14:29+05:30",
+   "asked": 9,
+   "skipped": 0,
+   "stopped": null,
+   "spend": {
+    "at_ist": "2026-11-24T10:14:38+05:30",
+    "phase": "smoke",
+    "set": "test",
+    "methods": "best_combo scheme_filter dense",
+    "questions": 3,
+    "calls": 12,
+    "cached": 5,
+    "paid_calls": 7,
+    "prompt_tokens": 40256,
+    "completion_tokens": 926,
+    "reasoning_tokens": 0,
+    "total_tokens": 41182,
+    "max_tokens": 55000,
+    "est_paid_calls": 5,
+    "est_prompt_tokens": 22088,
+    "est_completion_tokens": 2300,
+    "est_total_tokens": 24388,
+    "stopped": ""
+   },
+   "model_check": {
+    "at": "2026-11-24T10:14:38+05:30",
+    "method": "dense",
+    "model": "x-ai/grok-4.20",
+    "check_question": "What % of AUM does Aditya Birla Sun Life Flexi Cap Fund hold in ICICI Bank Ltd. as on 30 Sep 2026?",
+    "questions": [
+     "Q01",
+     "Q08",
+     "Q20"
+    ],
+    "verdict": "same answers",
+    "per_question": [
+     {
+      "qid": "Q01",
+      "question": "What % of AUM does Aditya Birla Sun Life Flexi Cap Fund hold in ICICI Bank Ltd. as on 30 Sep 2026?",
+      "cached_model": "x-ai/grok-4.20",
+      "cached": true,
+      "fresh_model": "x-ai/grok-4.20",
+      "fresh_value": 5.6,
+      "cached_value": 5.6,
+      "same_value": true,
+      "same_text": false
+     },
+     {
+      "qid": "Q08",
+      "question": "What is the total % of AUM in equity holdings of the Banks industry for Aditya Birla Sun Life Flexi Cap Fund as on 30 Sep 2026?",
+      "cached_model": "x-ai/grok-4.20",
+      "cached": true,
+      "fresh_model": "x-ai/grok-4.20",
+      "fresh_value": 18.23,
+      "cached_value": 18.23,
+      "same_value": true,
+      "same_text": true
+     },
+     {
+      "qid": "Q20",
+      "question": "Which holds more Infosys Ltd. as a % of AUM as on 30 Sep 2026: Aditya Birla Sun Life Flexi Cap Fund or Aditya Birla Sun Life Large Cap Fund?",
+      "cached_model": "x-ai/grok-4.20",
+      "cached": true,
+      "fresh_model": "x-ai/grok-4.20",
+      "fresh_value": 3.2,
+      "cached_value": 3.2,
+      "same_value": true,
+      "same_text": true
+     }
+    ]
+   }
+  }
+ ],
+ "rows": 9,
+ "expected_rows": 9,
+ "pending": [],
+ "complete": true,
+ "model_check": {
+  "at": "2026-11-24T10:14:38+05:30",
+  "method": "dense",
+  "model": "x-ai/grok-4.20",
+  "check_question": "What % of AUM does Aditya Birla Sun Life Flexi Cap Fund hold in ICICI Bank Ltd. as on 30 Sep 2026?",
+  "questions": [
+   "Q01",
+   "Q08",
+   "Q20"
+  ],
+  "verdict": "same answers",
+  "per_question": [
+   {
+    "qid": "Q01",
+    "question": "What % of AUM does Aditya Birla Sun Life Flexi Cap Fund hold in ICICI Bank Ltd. as on 30 Sep 2026?",
+    "cached_model": "x-ai/grok-4.20",
+    "cached": true,
+    "fresh_model": "x-ai/grok-4.20",
+    "fresh_value": 5.6,
+    "cached_value": 5.6,
+    "same_value": true,
+    "same_text": false
+   },
+   {
+    "qid": "Q08",
+    "question": "What is the total % of AUM in equity holdings of the Banks industry for Aditya Birla Sun Life Flexi Cap Fund as on 30 Sep 2026?",
+    "cached_model": "x-ai/grok-4.20",
+    "cached": true,
+    "fresh_model": "x-ai/grok-4.20",
+    "fresh_value": 18.23,
+    "cached_value": 18.23,
+    "same_value": true,
+    "same_text": true
+   },
+   {
+    "qid": "Q20",
+    "question": "Which holds more Infosys Ltd. as a % of AUM as on 30 Sep 2026: Aditya Birla Sun Life Flexi Cap Fund or Aditya Birla Sun Life Large Cap Fund?",
+    "cached_model": "x-ai/grok-4.20",
+    "cached": true,
+    "fresh_model": "x-ai/grok-4.20",
+    "fresh_value": 3.2,
+    "cached_value": 3.2,
+    "same_value": true,
+    "same_text": true
+   }
+  ]
+ }
+}
