@@ -43,7 +43,7 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Sequence
 
 import pandas as pd
 
@@ -148,13 +148,13 @@ def read_results(path: Path) -> list[dict]:
         return list(csv.DictReader(f))
 
 
-def write_results(path: Path, rows: Iterable[dict]) -> None:
+def write_results(path: Path, rows: Iterable[dict], columns: Sequence[str] = COLUMNS) -> None:
     tmp = path.with_suffix(".tmp")
     with tmp.open("w", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=COLUMNS, extrasaction="ignore")
+        w = csv.DictWriter(f, fieldnames=list(columns), extrasaction="ignore")
         w.writeheader()
         for r in rows:
-            w.writerow({k: _cell(r.get(k)) for k in COLUMNS})
+            w.writerow({k: _cell(r.get(k)) for k in columns})
     tmp.replace(path)
 
 
@@ -208,6 +208,16 @@ def now_ist() -> str:
 
 # --------------------------------------------------------------------------- the run
 
+def pending_row(method: str, q: Question, gold: GoldAnswer, reason: str, status: str = "not_asked") -> dict:
+    """A row for a question that was **not** asked (the token cap stopped the run, FR-R9.2).
+
+    It is written so ``results.csv`` lists every expected (method, question) pair and says which ones
+    still owe an answer; ``pending=1`` makes the next run ask it (``is_done``)."""
+    return {"method": method, "qid": q.id, "type": q.type, "answer_kind": q.answer_kind, "unit": q.unit,
+            "question": q.text, "gold_value": json.dumps(gold.value, ensure_ascii=False),
+            "n_gold_rows": len(gold.rows), "status": status, "error": reason, "pending": 1, "failure": ""}
+
+
 @dataclass
 class RunSummary:
     asked: int
@@ -215,20 +225,32 @@ class RunSummary:
     pending: list[tuple[str, str]]
     total_rows: int
     expected_rows: int
+    stopped: str | None = None            # why the run stopped early (the token cap), else None
 
     @property
     def complete(self) -> bool:
-        return not self.pending and self.total_rows == self.expected_rows
+        return not self.pending and self.total_rows == self.expected_rows and self.stopped is None
 
 
 def run_eval(settings, questions: list[Question], holdings: pd.DataFrame, answerers: dict[str, Answerer], *,
              out_dir: Path, fresh: bool = False, project_root: Path | None = None,
              questions_file: Path = QUESTIONS_FILE, progress: Callable[[str], None] = print,
-             manifest_extra: dict | None = None) -> RunSummary:
-    """Ask every (method, question) not yet done; rewrite results.csv after each answer."""
+             manifest_extra: dict | None = None, fingerprint: dict | None = None,
+             columns: Sequence[str] | None = None,
+             row_hook: Callable[[dict, str, Question, Any], dict] | None = None,
+             before_call: Callable[[str, Question], str | None] | None = None,
+             method_order: Sequence[str] | None = None) -> RunSummary:
+    """Ask every (method, question) not yet done; rewrite results.csv after each answer.
+
+    The retrieval benchmark (Phase R4) reuses this loop through the last five arguments:
+    ``fingerprint`` replaces the resume fingerprint (its run has its own, §9.1), ``columns`` and
+    ``row_hook`` add its extra columns, ``before_call`` may stop the run cleanly before a call (the
+    token cap, FR-R9.2; the rows not asked are written as pending), and ``method_order`` is the row
+    order in the file. Defaults keep the chunking run exactly as it was."""
     out_dir.mkdir(parents=True, exist_ok=True)
     results_path, manifest_path = out_dir / RESULTS_FILE, out_dir / MANIFEST_FILE
-    fingerprint = setup_fingerprint(settings, questions_file)
+    fingerprint = fingerprint or setup_fingerprint(settings, questions_file)
+    columns = list(columns or COLUMNS)
     methods = list(answerers)
 
     if fresh:
@@ -241,7 +263,8 @@ def run_eval(settings, questions: list[Question], holdings: pd.DataFrame, answer
                                  "run with --fresh to start a new recorded run")
 
     rows = {(r["method"], r["qid"]): r for r in read_results(results_path)}
-    order = {(m, q.id): i for i, (m, q) in enumerate((m, q) for m in METHODS for q in questions)}
+    order = {(m, q.id): i for i, (m, q) in
+             enumerate((m, q) for m in (method_order or METHODS) for q in questions)}
 
     session = {"started_at": now_ist(), "fresh": fresh, **git_state(project_root or settings.config_file.parent)}
     manifest.setdefault("created_at", session["started_at"])
@@ -262,36 +285,48 @@ def run_eval(settings, questions: list[Question], holdings: pd.DataFrame, answer
         tmp.replace(manifest_path)
 
     def save_results() -> None:
-        write_results(results_path, sorted(rows.values(), key=lambda r: order.get((r["method"], r["qid"]), 1e9)))
+        write_results(results_path, sorted(rows.values(), key=lambda r: order.get((r["method"], r["qid"]), 1e9)),
+                      columns)
 
     save_manifest()
     golds = {q.id: compute(holdings, q.gold_fn, q.params) for q in questions}
     rel, abs_pts = settings.eval.rel_tolerance, settings.eval.abs_tolerance_pct_points
     asked = skipped = 0
-    for method in methods:
-        for q in questions:
-            key = (method, q.id)
-            if key in rows and is_done(rows[key]):
-                skipped += 1
-                continue
-            res = answerers[method](q.text)
-            row = make_row(method, q, golds[q.id], res, rel, abs_pts)
-            rows[key] = row
-            asked += 1
+    stopped: str | None = None
+    todo = [(m, q) for m in methods for q in questions]
+    for i, (method, q) in enumerate(todo):
+        key = (method, q.id)
+        if key in rows and is_done(rows[key]):
+            skipped += 1
+            continue
+        stopped = before_call(method, q) if before_call else None
+        if stopped:
+            for m2, q2 in todo[i:]:
+                if (m2, q2.id) not in rows or not is_done(rows[(m2, q2.id)]):
+                    rows[(m2, q2.id)] = pending_row(m2, q2, golds[q2.id], stopped)
             save_results()
-            mark = "PENDING" if row["pending"] else ("ok " if row["correct"] else "x  ")
-            progress(f"{mark} {method:<14} {q.id} {row['status']:<17} "
-                     f"{row['prompt_tokens']:>7,} tok {row['total_ms']:>8,.0f} ms"
-                     + (f"  [{row['failure']}]" if row["failure"] else ""))
+            progress(f"STOPPED before {method} {q.id}: {stopped}")
+            break
+        res = answerers[method](q.text)
+        row = make_row(method, q, golds[q.id], res, rel, abs_pts)
+        if row_hook:
+            row = row_hook(row, method, q, res)
+        rows[key] = row
+        asked += 1
+        save_results()
+        mark = "PENDING" if row["pending"] else ("ok " if row["correct"] else "x  ")
+        progress(f"{mark} {method:<14} {q.id} {row['status']:<17} "
+                 f"{row['prompt_tokens']:>7,} tok {row['total_ms']:>8,.0f} ms"
+                 + (f"  [{row['failure']}]" if row["failure"] else ""))
 
     pending = [k for k, r in rows.items() if not is_done(r)]
-    session.update(finished_at=now_ist(), asked=asked, skipped=skipped)
+    session.update(finished_at=now_ist(), asked=asked, skipped=skipped, stopped=stopped)
     manifest.update(rows=len(rows), expected_rows=len(methods) * len(questions),
                     pending=[f"{m}:{q}" for m, q in pending], complete=not pending
                     and len(rows) == len(methods) * len(questions))
     save_manifest()
     return RunSummary(asked=asked, skipped=skipped, pending=pending, total_rows=len(rows),
-                      expected_rows=len(methods) * len(questions))
+                      expected_rows=len(methods) * len(questions), stopped=stopped)
 
 
 SCORE_FIELDS = ("correct", "numeric_correct", "list_exact", "jaccard", "choice_correct", "unanswerable_correct",
