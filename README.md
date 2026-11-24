@@ -2,7 +2,7 @@
 
 Ask plain-English questions about Indian mutual fund portfolio disclosures (the monthly Excel files every fund house publishes), and find out **which way of chunking those tables works best for RAG**.
 
-The main deliverable is an experiment, not the app. Six chunking strategies are built on the same parsed data, plus one approach with no chunking at all (the LLM writes pandas code). All seven methods answer the same 28 questions, and every answer is scored against a gold answer computed from the data. The result is in [`results/chunking_report.xlsx`](results/chunking_report.xlsx) and [`results/summary.md`](results/summary.md).
+The main deliverable is an experiment, not the app. Six chunking strategies are built on the same parsed data, plus one approach with no chunking at all (the LLM writes pandas code). All seven methods answer the same 28 questions, and every answer is scored against a gold answer computed from the data. The result is in [`results/chunking_report.xlsx`](results/chunking_report.xlsx) and [`results/summary.md`](results/summary.md). A second experiment then keeps that chunker and compares **eight retrieval methods** on 88 questions: [`results/retrieval/retrieval_report.xlsx`](results/retrieval/retrieval_report.xlsx).
 
 **Result in one line:** the best chunker for this data is **hierarchical** (17/28 correct, tied with scheme_level and ahead on retrieval). No chunker comes close to the pandas baseline (28/28), especially on totals and counts.
 
@@ -71,6 +71,72 @@ Full detail: the [Excel report](results/chunking_report.xlsx) has a Recommendati
 | `baseline` | No chunking: the LLM writes pandas code, which runs in a sandbox | Exact arithmetic over all rows |
 
 Why each one exists and what was expected: [`docs/SPEC.md`](docs/SPEC.md) §6.3.
+
+A second experiment keeps the winning chunker and compares eight **retrieval** methods instead; see below.
+
+---
+
+## The retrieval benchmark (second experiment)
+
+The first experiment varied the chunker with retrieval held fixed. The second one does the opposite: the
+chunker stays `hierarchical` (the winner above) and the **way the five chunks are chosen** varies across
+eight methods. Recorded run of 24 Nov 2026, same model and data; results in
+[`results/retrieval/retrieval_report.xlsx`](results/retrieval/retrieval_report.xlsx) and
+[`results/retrieval/summary.md`](results/retrieval/summary.md).
+
+**Result in one line:** filtering the search to the fund the question is about, then picking five diverse
+chunks inside it (`best_combo`), answers **67 of 88** questions against **57** for plain dense search — and
+does it on 3,121 prompt tokens per question instead of 5,445.
+
+| Method | What it does | Correct (88 test questions) |
+| --- | --- | ---: |
+| M8 `best_combo` | Scheme filter, then MMR for diversity | **67 (76%)** |
+| M6 `scheme_filter` | Fuzzy scheme match (0.85), then dense search inside it | 65 (74%) |
+| M1 `dense` | Plain vector search — the reference, what the chunking run used | 57 (65%) |
+
+M2 `bm25`, M3 `hybrid_rrf`, M4 `dense_rerank`, M5 `hybrid_rerank` and M7 `mmr` were compared in the free
+offline stage (all eight methods, no LLM call) and did not reach the shortlist that was paid for:
+[`results/retrieval/offline_summary.md`](results/retrieval/offline_summary.md).
+
+### What it shows
+
+- **Knowing the fund beats a better ranker.** Both scheme-filtering methods lead, and both roughly halve
+  the context by not sending look-alike funds.
+- **The whole gain is in `cross_scheme` questions: 44% → 88%.** "Which of these two funds holds more X"
+  needs rows from both funds in one context; plain dense search spends its five slots on whichever fund
+  matches better.
+- **The cross-encoder rerankers were not worth it** on this data: seconds per question on a laptop CPU,
+  and no better section recall than plain dense search.
+- **Retrieval is nearly solved, arithmetic is not.** The winner gets 100% of the needed rows into the
+  context and still answers 21 questions wrong — 18 of them with every row present. That is the same
+  conclusion as the chunking run: totals and counts belong in code, which is why the pandas baseline
+  answers 28/28.
+
+### Limits
+
+- **88 test questions**, and the top two differ by two answers, so M8 over M6 is within noise (the report
+  says so, with a paired bootstrap). M8 over M1 is not: +0.114 per question, 95% interval +0.045 to +0.193.
+- **60 of the 88 questions are generated from the data**, so their wording is closer to the sheets than a
+  real user's; the 28 hand-written ones are also reported on their own.
+- **One month, one fund house, one embedding model**, and the scheme filter depends on fund names being
+  distinctive enough to match fuzzily.
+
+Why each method exists and how it was chosen: [`docs/SPEC_RETRIEVAL.md`](docs/SPEC_RETRIEVAL.md) §5 and
+[`docs/DESIGN.md`](docs/DESIGN.md) §7.
+
+### Run the retrieval benchmark
+
+```powershell
+python -m src.retrieval questions                       # generate the dev / test questions + the manual check
+python -m src.retrieval offline --set dev               # grid search on dev, writes the chosen settings into config.yaml
+python -m src.retrieval offline --set test              # all eight methods on the test set, free -> offline.csv, offline_summary.md
+python -m src.retrieval estimate --methods best_combo scheme_filter dense   # what a paid run would cost, no call
+python -m src.retrieval run --methods best_combo scheme_filter dense --max-tokens 900000   # PAID
+python -m src.retrieval report                          # -> results/retrieval/summary.md, retrieval_report.xlsx
+```
+
+Only `run` calls the LLM, and it refuses to start without `--max-tokens`. Every paid run appends its real
+token use next to its estimate to `results/retrieval/spend_log.csv`.
 
 ---
 
@@ -166,10 +232,15 @@ src/rag/               retrieval, prompt, answer with cited source rows
 src/baseline/          text-to-pandas: schema prompt, code guard, sandbox
 src/llm.py             one LLM interface: grok / xai / groq / gemini / mock, retries, cache, fallback
 src/eval/              questions.yaml, gold answers, metrics, the runner, reports, the recommendation
+src/retrieval/         the eight retrieval methods, the offline benchmark, the paid Stage B run,
+                       the computed verdict and its reports
 app/                   Streamlit app (Ask, Compare, Results)
 tests/                 pytest suite
 results/               committed deliverables: results.csv, summary.md, chunking_report.xlsx, ...
-docs/                  SPEC.md (what and how it is judged), IMPLEMENTATION_PLAN.md (phases, decisions), DATA_NOTES.md
+results/retrieval/     the retrieval benchmark's own deliverables (offline.csv, results.csv,
+                       summary.md, retrieval_report.xlsx, spend_log.csv)
+docs/                  SPEC.md (what and how it is judged), IMPLEMENTATION_PLAN.md (phases, decisions),
+                       DATA_NOTES.md, DESIGN.md, and the SPEC_RETRIEVAL / IMPLEMENTATION_PLAN_RETRIEVAL pair
 ```
 
 Git-ignored: `.venv/`, `.env`, `data/raw/`, `data/processed/`, `data/chroma/`, `data/cache/`.

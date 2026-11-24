@@ -27,7 +27,9 @@
                 questions, ``--check-model`` adds the model-drift check (§12). Resumable: run it again
                 to pick up pending rows.
 
-Later phases add the Stage B part of ``report`` here.
+- ``report``    (Phase R5) free: ``results.csv`` → the computed verdict (§6.5), ``summary.md`` and
+                ``retrieval_report.xlsx``. Nothing is re-asked and no LLM is called. ``--offline`` also
+                rewrites the Stage A report (``offline_summary.md`` + the chart) from ``offline.csv``.
 """
 
 from __future__ import annotations
@@ -380,6 +382,35 @@ def cmd_run(settings, args) -> int:
     return 0 if s.complete else 1
 
 
+def cmd_report(settings, args) -> int:
+    """Phase R5: the verdict, summary.md and the Excel, from what Stage A and Stage B already wrote."""
+    from src.retrieval.excel_report import EXCEL_FILE
+    from src.retrieval.report import CHART_FILE, SUMMARY_FILE, write_offline_report, write_stage_b_report
+    from src.retrieval.verdict import verdict_line
+
+    out_dir = settings.paths.results / "retrieval"
+    if args.offline:
+        print(f"wrote {write_offline_report(out_dir, args.set)}\nwrote {out_dir / CHART_FILE}")
+
+    path, v = write_stage_b_report(out_dir, args.set)
+    print(f"wrote {path}")
+    if v is None:
+        print("no Stage B rows to rank yet: run `python -m src.retrieval run` first.", file=sys.stderr)
+        return 1
+    print(f"wrote {out_dir / EXCEL_FILE}")
+    print(f"\n{verdict_line(v)}")
+    for s in v.ranking:
+        print(f"  {s.rank}. {s.label:<22}{s.correct:>3}/{s.n} correct  {s.accuracy:>6.1%}  "
+              f"context gold rows {s.context_recall:>6.1%}  {s.prompt_tokens:>7,.0f} prompt tok  "
+              f"{s.retrieval_ms:>6,.0f} ms")
+    for r in v.reasons:
+        print(f"  - {r}")
+    for c in v.caveats:
+        print(f"  ! {c}")
+    print(f"\nStage A (all eight methods, free) stays in {out_dir / SUMMARY_FILE}.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
     ap = argparse.ArgumentParser(prog="python -m src.retrieval", description=__doc__.split("\n\n")[0])
@@ -407,6 +438,9 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--fresh", action="store_true", help="start a new results.csv and skip the LLM cache")
     r.add_argument("--check-model", action="store_true",
                    help="re-ask M1's prompts uncached and compare with the cached answers (§12)")
+    p = sub.add_parser("report", help="Stage B verdict, summary.md and the Excel; no LLM call (R5)")
+    p.add_argument("--set", default="test", choices=("dev", "test", "test_new"))
+    p.add_argument("--offline", action="store_true", help="also rewrite the Stage A report and chart")
     args = ap.parse_args(sys.argv[1:] if argv is None else argv)
     settings = get_settings()
     if args.cmd == "questions":
@@ -419,6 +453,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_estimate(settings, args)
     if args.cmd == "run":
         return cmd_run(settings, args)
+    if args.cmd == "report":
+        return cmd_report(settings, args)
     return 1
 
 
