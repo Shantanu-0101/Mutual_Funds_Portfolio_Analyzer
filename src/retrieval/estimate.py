@@ -16,9 +16,7 @@ No provider is contacted; a missing API key does not stop an estimate.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any, Sequence
 
 from src.eval.questions import Question
@@ -174,10 +172,3 @@ def smoke_questions(questions: Sequence[Question], types: Sequence[str] = SMOKE_
         if q is not None:
             out.append(q)
     return out
-
-
-def write_estimate(path: Path, est: Estimate) -> Path:
-    """Keep an estimate next to the run that used it (a local file: estimates are not committed)."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(est.as_dict(), indent=2) + "\n", encoding="utf-8")
-    return path

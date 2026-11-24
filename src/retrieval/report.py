@@ -229,7 +229,7 @@ def recall_chart(df: pd.DataFrame, path: Path, test_set: str = "test") -> None:
     types = [c for c in t.columns if c != "overall"]
     methods = [s.method for s in ranking]
     width = 0.8 / (len(types) + 1)
-    fig, ax = plt.subplots(figsize=(10.5, 0.62 * len(methods) + 1.8), dpi=150)
+    fig, ax = plt.subplots(figsize=(1.25 * len(methods) + 1.0, 4.6), dpi=150)
     fig.patch.set_facecolor(SURFACE)
     ax.set_facecolor(SURFACE)
     base = range(len(methods))
