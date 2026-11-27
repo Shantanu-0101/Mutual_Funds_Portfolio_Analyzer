@@ -13,7 +13,12 @@ Sheets:
 4. Retrieval & cost  context after the parent swap, tokens and latency
 5. Offline (Stage A) the free comparison of all eight methods on the same questions, for context
 6. Per question      every row of results.csv in plain words
-7. Run info          LLM, embedding, reranker, cap, spend log (tokens only, RD11)
+7. Run info          LLM, embedding, reranker, rows, data hashes
+
+What is **not** in the workbook (27 Nov 2026, your call): the per-run spend table and the token cap, so
+no call count or token total of a whole run sits here to be multiplied by a provider's rate. Those stay
+in ``summary.md`` and ``spend_log.csv``. Per-question token means do stay on the other sheets: prompt
+tokens are the verdict's third tie-break and the fairness check on recall.
 
 Numbers are written as numbers (percent / thousands formats), so the sheets sort and filter in Excel.
 """
@@ -220,7 +225,14 @@ def _sheet_questions(ws: Worksheet, v: Verdict, df: pd.DataFrame) -> None:
     _widths(ws, [16, 9, 13, 11, 60, 30, 40, 8, 22, 13, 9, 12, 9, 11, 11, 12, 10, 9, 8, 11, 22])
 
 
-def _sheet_run(ws: Worksheet, manifest: dict, df: pd.DataFrame, spend: list[dict]) -> None:
+def _sheet_run(ws: Worksheet, manifest: dict, df: pd.DataFrame) -> None:
+    """What the run was, not what it spent: the per-run totals stay in summary.md and spend_log.csv.
+
+    No run-level call or token total is written here (and no token cap), so the workbook describes the
+    experiment without carrying the figures a reader would multiply by a provider's rate. The per-question
+    token means on the other sheets stay: prompt tokens are the verdict's third tie-break (§6.5) and the
+    fairness check on recall (a method that wins by sending more context has to show it).
+    """
     llm, rr = manifest.get("llm", {}), manifest.get("reranker") or {}
     rows = [["Stage", f"{manifest.get('stage')} ({manifest.get('phase')}), question set "
                       f"{manifest.get('question_set')}"],
@@ -236,7 +248,6 @@ def _sheet_run(ws: Worksheet, manifest: dict, df: pd.DataFrame, spend: list[dict
             ["Rows", f"{manifest.get('rows', len(df))} of {manifest.get('expected_rows', '–')} expected"],
             ["Pending rows", int(df["pending"].fillna(0).sum())],
             ["Cached answers", int(df["cached"].fillna(0).sum())],
-            ["Token cap of the last run", manifest.get("max_tokens")],
             ["Run complete", "yes" if manifest.get("complete") else "no"]]
     if manifest.get("model_check"):
         mc = manifest["model_check"]
@@ -245,23 +256,14 @@ def _sheet_run(ws: Worksheet, manifest: dict, df: pd.DataFrame, spend: list[dict
     rows += [[f"Data file: {k}", f"sha256 {v[:16]}…"] for k, v in manifest.get("data_files", {}).items()
              if k.startswith("raw/")]
     nxt = _table(ws, 1, ["Field", "Value"], rows)
-
-    ws.cell(row=nxt, column=1, value="Spend (tokens only; prices are not kept in this repo)").font = BOLD
-    hdr = ["At (IST)", "Phase", "Questions", "Calls", "Cached", "Paid calls", "Prompt tokens",
-           "Completion tokens", "Total tokens", "Estimated total", "Cap", "Stopped"]
-    body = [[str(r.get("at_ist", ""))[:19].replace("T", " "), r.get("phase"), int(r.get("questions") or 0),
-             int(r.get("calls") or 0), int(r.get("cached") or 0), int(r.get("paid_calls") or 0),
-             int(r.get("prompt_tokens") or 0), int(r.get("completion_tokens") or 0),
-             int(r.get("total_tokens") or 0), int(r.get("est_total_tokens") or 0),
-             int(r.get("max_tokens") or 0), r.get("stopped") or "–"] for r in spend]
-    _table(ws, nxt + 1, hdr, body, {c: INT for c in range(3, 12)})
-    _widths(ws, [28, 70, 11, 9, 9, 10, 13, 14, 13, 14, 12, 12])
+    ws.cell(row=nxt, column=1,
+            value="Per-run call and token totals are not in this workbook: they are in "
+                  "results/retrieval/summary.md and spend_log.csv.")
+    _widths(ws, [28, 70])
 
 
 def write_excel(df: pd.DataFrame, manifest: dict, v: Verdict, offline: pd.DataFrame | None,
                 path: Path) -> Path:
-    from src.retrieval.report import read_spend
-
     used = df[df["qid"].isin(v.qids)]
     wb = Workbook()
     _sheet_verdict(wb.active, v, df, manifest)
@@ -271,6 +273,6 @@ def write_excel(df: pd.DataFrame, manifest: dict, v: Verdict, offline: pd.DataFr
     _sheet_cost(wb.create_sheet("Retrieval & cost"), v, used)
     _sheet_offline(wb.create_sheet("Offline (Stage A)"), offline, {s.method for s in v.ranking})
     _sheet_questions(wb.create_sheet("Per question"), v, df)
-    _sheet_run(wb.create_sheet("Run info"), manifest, df, read_spend(path.parent))
+    _sheet_run(wb.create_sheet("Run info"), manifest, df)
     wb.save(path)
     return path

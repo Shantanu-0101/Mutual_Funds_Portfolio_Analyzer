@@ -224,6 +224,41 @@ def test_excel_has_the_sheets_and_no_bootstrap_note(tmp_path):
     assert wb["Ranking"].cell(row=2, column=1).value == 1
 
 
+def test_excel_carries_no_run_level_call_or_token_totals(tmp_path, monkeypatch):
+    """27 Nov 2026: the workbook must not hold a whole run's calls or tokens (the spend table).
+
+    Per-question token means stay (the verdict's third tie-break); what goes is anything a reader could
+    multiply by a provider's rate to price the run. The spend log itself stays in summary.md and
+    spend_log.csv.
+    """
+    import csv
+
+    df = frame(method_rows("best_combo", ALL, tokens=1000), method_rows("dense", {"Q1"}, tokens=4000))
+    spend = {"at_ist": "2026-11-24T10:25:50+05:30", "phase": "full", "set": "test", "questions": "5",
+             "calls": "15", "cached": "2", "paid_calls": "13", "prompt_tokens": "123456",
+             "completion_tokens": "7890", "total_tokens": "131346", "est_total_tokens": "200000",
+             "max_tokens": "900000", "stopped": ""}
+    with (tmp_path / "spend_log.csv").open("w", encoding="utf-8", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(spend))
+        w.writeheader()
+        w.writerow(spend)
+
+    manifest = {**MANIFEST, "max_tokens": 900000}
+    path = write_excel(df, manifest, verdict(df), None, tmp_path / "retrieval_report.xlsx")
+    wb = load_workbook(path)
+    cells = [str(c.value) for ws in wb for r in ws.iter_rows() for c in r if c.value is not None]
+    text = " ".join(cells)
+    for forbidden in ("123456", "7890", "131346", "200000", "900000", "Paid calls", "Total tokens",
+                      "Estimated total", "Token cap"):
+        assert forbidden not in text, f"{forbidden!r} is back in the Excel"
+    run = wb["Run info"]
+    assert "not in this workbook" in " ".join(str(c.value) for r in run.iter_rows() for c in r
+                                              if c.value is not None)
+    # The per-question means are still there, on the sheets that rank the methods.
+    assert any(c.value == "Prompt tokens / question" for r in wb["Ranking"].iter_rows() for c in r)
+    assert 1000 in [c.value for r in wb["Ranking"].iter_rows() for c in r]
+
+
 def test_excel_offline_sheet_says_so_when_stage_a_is_missing(tmp_path):
     df = frame(method_rows("best_combo", ALL), method_rows("dense", {"Q1"}))
     wb = load_workbook(write_excel(df, MANIFEST, verdict(df), pd.DataFrame(), tmp_path / "r.xlsx"))
