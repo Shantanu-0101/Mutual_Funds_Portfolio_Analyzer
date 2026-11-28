@@ -8,7 +8,7 @@ The main deliverable is an experiment, not the app. Six chunking strategies are 
 
 ---
 
-## Findings
+## Findings:
 
 Recorded run of 20 Nov 2026: Grok `x-ai/grok-4.20`, temperature 0. The data is Aditya Birla Sun Life (ABSL), 30 Sep 2026. Embeddings come from `BAAI/bge-small-en-v1.5` with top_k 5. That gives 7 methods × 28 questions = 196 answers, all from the same model.
 
