@@ -47,7 +47,7 @@ Recorded run of 20 Nov 2026: Grok `x-ai/grok-4.20`, temperature 0. The data is A
    Answers take about 2 s for the small-chunk methods and about 4 s for the large ones. hierarchical matches scheme_level's accuracy for half the tokens. That, plus its higher retrieval, is why it wins the tie.
 4. **Does the pandas baseline beat RAG on aggregations?** Yes, clearly: 7/7 against 3/7 for the best chunker. When a question needs exact arithmetic over many rows, letting the LLM write code over the whole table beats any chunking.
 
-### Limits of this result
+### Limits of this result:
 
 - **Small question set:** 28 questions, so a 1-question gap could be noise. The top two chunkers are tied on correct answers.
 - **One fund house, one month:** only ABSL, 30 Sep 2026.
